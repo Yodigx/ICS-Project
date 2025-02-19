@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Fitness Hub - Your ultimate destination for fitness, nutrition, and wellness. Join us to achieve your health goals." />
+  <meta name="keywords" content="fitness, gym, nutrition, yoga, personal training, health" />
+  <meta name="author" content="Fitness Hub Team" />
+  <title>Fitness Hub</title>
+  <link rel="icon" type="image/png" href="images/favicon.png" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@700&family=Poppins:wght@400;600&display=swap');
+
+    /* Smooth Scroll */
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 70px; /* Offset for fixed nav */
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #1a1a2e;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #00bcd4;
+      border-radius: 5px;
+    }
+
+    /* Reset & Base Styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      font-family: 'Poppins', sans-serif;
+      color: #fff;
+      line-height: 1.6;
+    }
+
+    /* Navigation Bar */
+    nav {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      background: rgba(26, 26, 46, 0.9);
+      backdrop-filter: blur(10px);
+      z-index: 1000;
+      padding: 15px 20px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+    nav ul {
+      display: flex;
+      justify-content: center;
+      list-style: none;
+      flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    }
+    nav ul li {
+      margin: 0 10px; /* Reduced margin for smaller screens */
+    }
+    nav ul li a {
+      color: #fff;
+      text-decoration: none;
+      font-size: 1em; /* Smaller font size for mobile */
+      transition: color 0.3s ease;
+    }
+    nav ul li a:hover {
+      color: #00bcd4;
+    }
+
+    /* Banner & 3D Slider Styles */
+    .banner {
+      width: 100%;
+      height: 100vh;
+      text-align: center;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(26, 26, 46, 0.9), rgba(22, 33, 62, 0.9));
+      background-attachment: fixed;
+    }
+    .banner::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1;
+    }
+
+    .banner .slider {
+      position: absolute;
+      width: 200px; /* Smaller size for better fit */
+      height: 266px;
+      top: 15%;
+      left: calc(50% - 100px);
+      transform-style: preserve-3d;
+      transform: perspective(1500px);
+      animation: autoRun 25s linear infinite;
+      z-index: 2;
+    }
+    @keyframes autoRun {
+      from { transform: perspective(1500px) rotateX(-16deg) rotateY(0deg); }
+      to { transform: perspective(1500px) rotateX(-16deg) rotateY(360deg); }
+    }
+    .banner .slider .item {
+      position: absolute;
+      inset: 0;
+      transform: rotateY(calc( (var(--position) - 1) * (360 / var(--quantity)) * 1deg))
+                 translateZ(450px); /* Adjusted for smaller screens */
+    }
+    .banner .slider .item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 15px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Content Styles */
+    .banner .content {
+      position: relative;
+      z-index: 3;
+      text-align: center;
+      padding-top: 200px; /* Increased padding to avoid collision */
+    }
+    .banner .content h1 {
+      font-family: 'Rubik', sans-serif;
+      font-size: 4em; /* Smaller font size for mobile */
+      line-height: 1.2;
+      color: #fff;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      animation: fadeIn 2s ease-in-out;
+    }
+    .banner .content h1::after {
+      content: attr(data-content);
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: -1;
+      color: transparent;
+      -webkit-text-stroke: 2px #00bcd4;
+    }
+    .banner .content .author {
+      font-size: 1em; /* Smaller font size for mobile */
+      margin-bottom: 30px;
+      animation: fadeIn 2.5s ease-in-out;
+    }
+    .banner .content .author h2 {
+      font-size: 2em; /* Smaller font size for mobile */
+      margin-bottom: 10px;
+    }
+    .banner .content .author p {
+      font-size: 0.9em; /* Smaller font size for mobile */
+      color: #ccc;
+    }
+    .banner .content .cta-button {
+      background: #00bcd4;
+      color: #fff;
+      padding: 10px 20px; /* Smaller padding for mobile */
+      border: none;
+      border-radius: 50px;
+      font-size: 1em; /* Smaller font size for mobile */
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.3s ease;
+      animation: fadeIn 3s ease-in-out;
+    }
+    .banner .content .cta-button:hover {
+      background: #0097a7;
+      transform: translateY(-5px);
+    }
+
+    /* Additional Sections */
+    .section {
+      padding: 50px 20px; /* Reduced padding for smaller screens */
+      text-align: center;
+      background: rgba(255, 255, 255, 0.1);
+      margin: 20px;
+      border-radius: 15px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+    .section h2 {
+      font-size: 2em; /* Smaller font size for mobile */
+      margin-bottom: 20px; /* Reduced margin for smaller screens */
+      color: #00bcd4;
+      text-transform: uppercase;
+    }
+    .section p {
+      font-size: 1em; /* Smaller font size for mobile */
+      color: #ccc;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .section .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Adjusted for smaller screens */
+      gap: 20px; /* Reduced gap for smaller screens */
+      margin-top: 20px; /* Reduced margin for smaller screens */
+    }
+    .section .grid .card {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 15px; /* Reduced padding for smaller screens */
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      text-align: center;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .section .grid .card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+    .section .grid .card img {
+      width: 100%;
+      border-radius: 10px;
+      margin-bottom: 10px; /* Reduced margin for smaller screens */
+    }
+    .section .grid .card h3 {
+      font-size: 1.2em; /* Smaller font size for mobile */
+      margin-bottom: 10px;
+      color: #00bcd4;
+    }
+    .section .grid .card p {
+      font-size: 0.9em; /* Smaller font size for mobile */
+      color: #ccc;
+    }
+
+    /* Footer */
+    footer {
+      background: rgba(26, 26, 46, 0.9);
+      padding: 15px; /* Reduced padding for smaller screens */
+      text-align: center;
+      margin-top: 20px; /* Reduced margin for smaller screens */
+    }
+    footer p {
+      font-size: 0.9em; /* Smaller font size for mobile */
+      color: #ccc;
+    }
+    footer .social-links a {
+      color: #00bcd4;
+      text-decoration: none;
+      margin: 0 5px; /* Reduced margin for smaller screens */
+      transition: color 0.3s ease;
+    }
+    footer .social-links a:hover {
+      color: #0097a7;
+    }
+
+    /* Back-to-Top Button */
+    #back-to-top {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #00bcd4;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 40px; /* Smaller size for mobile */
+      height: 40px;
+      cursor: pointer;
+      display: none;
+      transition: background 0.3s ease;
+    }
+    #back-to-top:hover {
+      background: #0097a7;
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* Responsive Styles */
+    @media screen and (max-width: 767px) {
+      .banner .slider {
+        width: 150px;
+        height: 200px;
+        left: calc(50% - 75px);
+      }
+      .banner .slider .item {
+        transform: rotateY(calc( (var(--position) - 1) * (360 / var(--quantity)) * 1deg))
+                   translateZ(300px);
+      }
+      .banner .content h1 {
+        font-size: 3em;
+      }
+      .banner .content .author h2 {
+        font-size: 1.5em;
+      }
+      .section {
+        padding: 30px 10px;
+      }
+      .section h2 {
+        font-size: 1.8em;
+      }
+      .section p {
+        font-size: 0.9em;
+      }
+      .section .grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Adjusted for smaller screens */
+        gap: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation Bar -->
+  <nav>
+    <ul>
+      <li><a href="#home">Home</a></li>
+      <li><a href="#services">Services</a></li>
+      <li><a href="#testimonials">Testimonials</a></li>
+      <li><a href="#about">About</a></li>
+    </ul>
+  </nav>
+
+  <!-- Banner Section -->
+  <div class="banner" id="home">
+    <div class="slider" style="--quantity: 10">
+      <div class="item" style="--position: 1">
+        <img src="images/Exercises.jpg" alt="Person performing exercises in a gym" loading="lazy" />
+      </div>
+      <div class="item" style="--position: 2">
+        <img src="images/Food and Diet.jpg" alt="Healthy food and diet options" loading="lazy" />
+      </div>
+      <div class="item" style="--position: 3">
+        <img src="images/Hydration.jpg" alt="Person drinking water for hydration" loading="lazy" />
+      </div>
+      <div class="item" style="--position: 4">
+        <img src="images/All the best.jpg" alt="Motivational quote for fitness" loading="lazy" />
+      </div>
+      <div class="item" style="--position: 5">
+        <img src="images/Motivation.jpg" alt="Fitness motivation poster" loading="lazy" />
+      </div>
+      <div class="item" style="--position: 6">
+        <img src="images/Nutrition.jpg" alt="Nutritional food options" loading="lazy" />
+      </div>
+      <div class="item" style="--position: 7">
+        <img src="images/Yoga.jpg" alt="Person performing yoga" loading="lazy" />
+      </div>
+      <div class="item" style="--position: 8">
+        <img src="images/Testimonials.jpg" alt="Customer testimonials" loading="lazy" />
+      </div>
+      <div class="item" style="--position: 9">
+        <img src="images/News.jpg" alt="Fitness news and updates" loading="lazy" />
+      </div>
+      <div class="item" style="--position: 10">
+        <img src="images/About Us.jpg" alt="About Fitness Hub team" loading="lazy" />
+      </div>
+    </div>
+    <div class="content">
+      <h1 data-content="FITNESS HUB">
+        FITNESS HUB
+      </h1>
+      <div class="author">
+        <h2>Get Fit, Stay Healthy</h2>
+        <p><b>Your Journey Starts Here</b></p>
+        <button class="cta-button" aria-label="Join Fitness Hub Now">Join Now</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Additional Sections -->
+  <div class="section" id="services">
+    <h2>Our Services</h2>
+    <div class="grid">
+      <div class="card">
+        <img src="images/Exercises.jpg" alt="Personal training session" loading="lazy" />
+        <h3>Personal Training</h3>
+        <p>Customized workout plans tailored to your needs.</p>
+      </div>
+      <div class="card">
+        <img src="images/Nutrition.jpg" alt="Nutritional meal plan" loading="lazy" />
+        <h3>Nutrition Plans</h3>
+        <p>Healthy eating plans to complement your fitness journey.</p>
+      </div>
+      <div class="card">
+        <img src="images/Yoga.jpg" alt="Yoga session" loading="lazy" />
+        <h3>Yoga & Meditation</h3>
+        <p>Relax and rejuvenate with our yoga sessions.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="testimonials">
+    <h2>Testimonials</h2>
+    <div class="grid">
+      <div class="card">
+        <img src="images/Testimonials1.jpg" alt="John Doe testimonial" loading="lazy" />
+        <h3>John Doe</h3>
+        <p>"Amazing trainers and great environment. Highly recommended!"</p>
+      </div>
+      <div class="card">
+        <img src="images/Testimonials2.jpg" alt="John Wick testimonial" loading="lazy" />
+        <h3>John Wick</h3>
+        <p>"I achieved my fitness goals faster than I expected. Thank you!"</p>
+      </div>
+      <div class="card">
+        <img src="images/Testimonials3.jpg" alt="Mike Johnson testimonial" loading="lazy" />
+        <h3>Mike Johnson</h3>
+        <p>"The nutrition plans are fantastic. I feel healthier every day."</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="about">
+    <h2>About Us</h2>
+    <p>We are a team of dedicated fitness professionals committed to helping you achieve your health and wellness goals. Our personalized approach ensures that you get the best results.</p>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-content">
+      <p>&copy; 2023 Fitness Hub. All rights reserved.</p>
+      <div class="social-links">
+        <a href="#" aria-label="Follow us on Facebook">Facebook</a>
+        <a href="#" aria-label="Follow us on Instagram">Instagram</a>
+        <a href="#" aria-label="Follow us on Twitter">Twitter</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Back-to-Top Button -->
+  <button id="back-to-top" aria-label="Back to Top">↑</button>
+
+  <script>
+    // Back-to-Top Button
+    window.onscroll = function() {
+      const backToTopButton = document.getElementById('back-to-top');
+      if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+        backToTopButton.style.display = 'block';
+      } else {
+        backToTopButton.style.display = 'none';
+      }
+    };
+    document.getElementById('back-to-top').onclick = function() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // CTA Button Alert
+    document.querySelector('.cta-button').addEventListener('click', function() {
+      alert('Thank you for joining Fitness Hub!');
+    });
+  </script>
+</body>
+</html>
