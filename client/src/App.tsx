@@ -11,6 +11,7 @@ import Timer from "@/pages/Timer";
 import Leaderboard from "@/pages/Leaderboard";
 import Schedule from "@/pages/Schedule";
 import Messages from "@/pages/Messages";
+import Profile from "@/pages/Profile";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import { AuthProvider } from "@/hooks/useAuth";
@@ -57,6 +58,11 @@ function Router() {
       <Route path="/messages">
         <ProtectedRoute>
           <Messages />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/profile">
+        <ProtectedRoute>
+          <Profile />
         </ProtectedRoute>
       </Route>
       <Route path="/login" component={Login} />

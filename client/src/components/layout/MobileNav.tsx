@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'wouter';
+import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
 
 export default function MobileNav() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -42,64 +43,54 @@ export default function MobileNav() {
 
       <div className={`lg:hidden fixed top-14 inset-x-0 bg-dark text-white z-50 transform ${isMenuOpen ? 'translate-y-0' : '-translate-y-full'} transition-transform duration-200 ease-in-out`}>
         <nav className="px-4 py-2 space-y-1">
-          <Link href="/">
-            <a className={linkClass("/")} onClick={() => setIsMenuOpen(false)}>
-              <i className={`fas fa-home ${iconClass("/")}`}></i>
-              <span>Dashboard</span>
-            </a>
-          </Link>
-          <Link href="/diet-planner">
-            <a className={linkClass("/diet-planner")} onClick={() => setIsMenuOpen(false)}>
-              <i className={`fas fa-utensils ${iconClass("/diet-planner")}`}></i>
-              <span>Diet Planner</span>
-            </a>
-          </Link>
-          <Link href="/workouts">
-            <a className={linkClass("/workouts")} onClick={() => setIsMenuOpen(false)}>
-              <i className={`fas fa-dumbbell ${iconClass("/workouts")}`}></i>
-              <span>Workouts</span>
-            </a>
-          </Link>
-          <Link href="/progress">
-            <a className={linkClass("/progress")} onClick={() => setIsMenuOpen(false)}>
-              <i className={`fas fa-chart-line ${iconClass("/progress")}`}></i>
-              <span>Progress</span>
-            </a>
-          </Link>
-          <Link href="/timer">
-            <a className={linkClass("/timer")} onClick={() => setIsMenuOpen(false)}>
-              <i className={`fas fa-stopwatch ${iconClass("/timer")}`}></i>
-              <span>Timer</span>
-            </a>
-          </Link>
-          <Link href="/leaderboard">
-            <a className={linkClass("/leaderboard")} onClick={() => setIsMenuOpen(false)}>
-              <i className={`fas fa-trophy ${iconClass("/leaderboard")}`}></i>
-              <span>Leaderboard</span>
-            </a>
-          </Link>
-          <Link href="/schedule">
-            <a className={linkClass("/schedule")} onClick={() => setIsMenuOpen(false)}>
-              <i className={`fas fa-calendar-alt ${iconClass("/schedule")}`}></i>
-              <span>Schedule</span>
-            </a>
-          </Link>
-          <Link href="/messages">
-            <a className={linkClass("/messages")} onClick={() => setIsMenuOpen(false)}>
-              <i className={`fas fa-comments ${iconClass("/messages")}`}></i>
-              <span>Messages</span>
-            </a>
-          </Link>
-          <button 
+          <a href="/" className={linkClass("/")} onClick={() => setIsMenuOpen(false)}>
+            <i className={`fas fa-home ${iconClass("/")}`}></i>
+            <span>Dashboard</span>
+          </a>
+          <a href="/diet-planner" className={linkClass("/diet-planner")} onClick={() => setIsMenuOpen(false)}>
+            <i className={`fas fa-utensils ${iconClass("/diet-planner")}`}></i>
+            <span>Diet Planner</span>
+          </a>
+          <a href="/workouts" className={linkClass("/workouts")} onClick={() => setIsMenuOpen(false)}>
+            <i className={`fas fa-dumbbell ${iconClass("/workouts")}`}></i>
+            <span>Workouts</span>
+          </a>
+          <a href="/progress" className={linkClass("/progress")} onClick={() => setIsMenuOpen(false)}>
+            <i className={`fas fa-chart-line ${iconClass("/progress")}`}></i>
+            <span>Progress</span>
+          </a>
+          <a href="/timer" className={linkClass("/timer")} onClick={() => setIsMenuOpen(false)}>
+            <i className={`fas fa-stopwatch ${iconClass("/timer")}`}></i>
+            <span>Timer</span>
+          </a>
+          <a href="/leaderboard" className={linkClass("/leaderboard")} onClick={() => setIsMenuOpen(false)}>
+            <i className={`fas fa-trophy ${iconClass("/leaderboard")}`}></i>
+            <span>Leaderboard</span>
+          </a>
+          <a href="/schedule" className={linkClass("/schedule")} onClick={() => setIsMenuOpen(false)}>
+            <i className={`fas fa-calendar-alt ${iconClass("/schedule")}`}></i>
+            <span>Schedule</span>
+          </a>
+          <a href="/messages" className={linkClass("/messages")} onClick={() => setIsMenuOpen(false)}>
+            <i className={`fas fa-comments ${iconClass("/messages")}`}></i>
+            <span>Messages</span>
+          </a>
+          <a href="/profile" className={linkClass("/profile")} onClick={() => setIsMenuOpen(false)}>
+            <i className={`fas fa-user ${iconClass("/profile")}`}></i>
+            <span>Profile</span>
+          </a>
+          <Button 
             onClick={() => {
               logout();
               setIsMenuOpen(false);
             }}
-            className="block w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-gray-800 text-gray-300 hover:text-white"
+            variant="outline"
+            className="w-full mt-2 text-sm justify-start"
+            size="sm"
           >
-            <i className="fas fa-sign-out-alt mr-3 text-gray-400"></i>
+            <i className="fas fa-sign-out-alt mr-3"></i>
             <span>Logout</span>
-          </button>
+          </Button>
         </nav>
       </div>
     </>
