@@ -29,48 +29,124 @@ export default function QuickStats() {
 
   // Calculate weekly workouts
   const getWeeklyWorkouts = () => {
-    if (!workoutLogs) return { count: 0, target: 5 };
+    if (!workoutLogs || !Array.isArray(workoutLogs)) return { count: 0, target: 5 };
     
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
     
-    const weeklyLogs = workoutLogs.filter((log: any) => 
-      new Date(log.date) >= oneWeekAgo && log.completed
-    );
-    
-    return { count: weeklyLogs.length, target: 5 };
+    try {
+      const weeklyLogs = workoutLogs.filter((log: any) => 
+        new Date(log.date) >= oneWeekAgo && log.completed
+      );
+      
+      return { count: weeklyLogs.length, target: 5 };
+    } catch (error) {
+      console.error("Error calculating weekly workouts:", error);
+      return { count: 0, target: 5 };
+    }
   };
 
   // Calculate daily calories
   const getDailyCalories = () => {
-    if (!mealPlan) return { current: 0, target: 2200 };
+    if (!mealPlan || typeof mealPlan !== 'object') return { current: 0, target: 2200 };
     
     // Calculate total calories from meal plan
     let totalCalories = 0;
     
-    // In a real app, you would fetch the actual food details for each meal
-    // For this demo, we'll use a placeholder value
-    totalCalories = 1842;
+    try {
+      // Check if meals property exists and is an array
+      const meals = (mealPlan as any).meals;
+      if (Array.isArray(meals)) {
+        // Assuming each meal has a food object with calories
+        meals.forEach((meal: any) => {
+          if (meal.food && typeof meal.food.calories === 'number') {
+            totalCalories += (meal.food.calories * (meal.quantity || 1));
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Error calculating daily calories:", error);
+    }
     
     return { current: totalCalories, target: 2200 };
   };
 
   // Calculate streak
   const getStreak = () => {
-    if (!workoutLogs) return { days: 0, target: 30 };
+    if (!workoutLogs || !Array.isArray(workoutLogs) || workoutLogs.length === 0) {
+      return { days: 0, target: 30 };
+    }
     
-    // In a real app, you would calculate the actual streak
-    // For this demo, we'll use a placeholder value
-    return { days: 12, target: 30 };
+    // Sort workout logs by date (most recent first)
+    const sortedLogs = [...workoutLogs]
+      .filter((log: any) => log.completed)
+      .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    if (sortedLogs.length === 0) {
+      return { days: 0, target: 30 };
+    }
+    
+    // Check if there's a workout for today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const mostRecentLog = new Date(sortedLogs[0].date);
+    mostRecentLog.setHours(0, 0, 0, 0);
+    
+    // If the most recent workout is not today or yesterday, streak is 0
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    if (mostRecentLog < yesterday) {
+      return { days: 0, target: 30 };
+    }
+    
+    // Count consecutive days with workouts
+    let streak = 1; // Start with 1 for the most recent day
+    let currentDate = mostRecentLog;
+    
+    for (let i = 1; i < sortedLogs.length; i++) {
+      const prevDate = new Date(sortedLogs[i].date);
+      prevDate.setHours(0, 0, 0, 0);
+      
+      // Check if this workout was the day before currentDate
+      const expectedPrevDate = new Date(currentDate);
+      expectedPrevDate.setDate(expectedPrevDate.getDate() - 1);
+      
+      if (prevDate.getTime() === expectedPrevDate.getTime()) {
+        streak++;
+        currentDate = prevDate;
+      } else {
+        break; // Streak is broken
+      }
+    }
+    
+    return { days: streak, target: 30 };
   };
 
   // Calculate protein intake
   const getProteinIntake = () => {
-    if (!mealPlan) return { grams: 0, target: 120 };
+    if (!mealPlan || typeof mealPlan !== 'object') return { grams: 0, target: 120 };
     
-    // In a real app, you would calculate the actual protein intake
-    // For this demo, we'll use a placeholder value
-    return { grams: 68, target: 120 };
+    // Calculate total protein from meal plan
+    let totalProtein = 0;
+    
+    try {
+      // Check if meals property exists and is an array
+      const meals = (mealPlan as any).meals;
+      if (Array.isArray(meals)) {
+        // Assuming each meal has a food object with protein
+        meals.forEach((meal: any) => {
+          if (meal.food && typeof meal.food.protein === 'number') {
+            totalProtein += (meal.food.protein * (meal.quantity || 1));
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Error calculating protein intake:", error);
+    }
+    
+    return { grams: totalProtein, target: 120 };
   };
 
   const statsData: QuickStat[] = [
