@@ -1,8 +1,9 @@
 import { ReactNode, useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
+import BottomNav from './BottomNav';
 import { useAuth } from '@/hooks/useAuth';
-import { useLocation, Link } from 'wouter';
+import { useLocation } from 'wouter';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface MainLayoutProps {
@@ -64,41 +65,8 @@ export default function MainLayout({ children, title }: MainLayoutProps) {
         </div>
       </main>
       
-      {/* Mobile bottom navigation - fixed at bottom of viewport */}
-      <div className="lg:hidden fixed bottom-0 w-full bg-white border-t border-gray-200 z-30">
-        <div className="flex justify-around">
-          <Link href="/">
-            <a className="flex flex-col items-center py-3 px-2 text-primary">
-              <i className="fas fa-home text-xl"></i>
-              <span className="text-xs mt-1">Home</span>
-            </a>
-          </Link>
-          <Link href="/diet-planner">
-            <a className="flex flex-col items-center py-3 px-2 text-gray-500">
-              <i className="fas fa-utensils text-xl"></i>
-              <span className="text-xs mt-1">Diet</span>
-            </a>
-          </Link>
-          <Link href="/workouts">
-            <a className="flex flex-col items-center py-3 px-2 text-gray-500">
-              <i className="fas fa-dumbbell text-xl"></i>
-              <span className="text-xs mt-1">Workout</span>
-            </a>
-          </Link>
-          <Link href="/progress">
-            <a className="flex flex-col items-center py-3 px-2 text-gray-500">
-              <i className="fas fa-chart-line text-xl"></i>
-              <span className="text-xs mt-1">Progress</span>
-            </a>
-          </Link>
-          <Link href="/profile">
-            <a className="flex flex-col items-center py-3 px-2 text-gray-500">
-              <i className="fas fa-user text-xl"></i>
-              <span className="text-xs mt-1">Profile</span>
-            </a>
-          </Link>
-        </div>
-      </div>
+      {/* Mobile bottom navigation */}
+      <BottomNav />
     </div>
   );
 }
