@@ -1,423 +1,557 @@
-import type { Express } from "express";
+import express, { type Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
-import {
-  insertUserSchema,
-  insertWorkoutSchema,
-  insertMealSchema,
-  insertUserProgressSchema,
-  insertClassSchema,
-  insertClassEnrollmentSchema,
-  insertMessageSchema
+import { 
+  insertUserSchema, 
+  insertWorkoutSchema, 
+  insertExerciseSchema, 
+  insertWorkoutExerciseSchema,
+  insertFoodSchema,
+  insertMealPlanSchema,
+  insertWorkoutLogSchema,
+  insertProgressDataSchema,
+  insertMessageSchema,
+  insertClassScheduleSchema,
+  insertClassEnrollmentSchema
 } from "@shared/schema";
-import session from "express-session";
-import passport from "passport";
-import { Strategy as LocalStrategy } from "passport-local";
-import MemoryStore from "memorystore";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Create memory store for sessions
-  const MemoryStoreSession = MemoryStore(session);
-  
-  // Session configuration
-  app.use(session({
-    secret: process.env.SESSION_SECRET || "fitlife-secret",
-    resave: false,
-    saveUninitialized: false,
-    store: new MemoryStoreSession({
-      checkPeriod: 86400000 // prune expired entries every 24h
-    }),
-    cookie: {
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
-    }
-  }));
-  
-  // Initialize passport
-  app.use(passport.initialize());
-  app.use(passport.session());
-  
-  // Configure passport local strategy
-  passport.use(new LocalStrategy(async (username, password, done) => {
-    try {
-      const user = await storage.getUserByUsername(username);
-      if (!user) {
-        return done(null, false, { message: "Incorrect username" });
-      }
-      if (user.password !== password) { // In production, use proper password hashing
-        return done(null, false, { message: "Incorrect password" });
-      }
-      return done(null, user);
-    } catch (err) {
-      return done(err);
-    }
-  }));
-  
-  // Serialize and deserialize user
-  passport.serializeUser((user: any, done) => {
-    done(null, user.id);
-  });
-  
-  passport.deserializeUser(async (id: number, done) => {
-    try {
-      const user = await storage.getUser(id);
-      done(null, user);
-    } catch (err) {
-      done(err);
-    }
-  });
-  
-  // Middleware to check if user is authenticated
-  const isAuthenticated = (req: any, res: any, next: any) => {
-    if (req.isAuthenticated()) {
-      return next();
-    }
-    res.status(401).json({ message: "Unauthorized" });
-  };
-  
   // Auth routes
-  app.post("/api/auth/login", passport.authenticate("local"), (req: any, res) => {
-    res.json({ user: req.user });
-  });
+  const authRouter = express.Router();
   
-  app.post("/api/auth/register", async (req, res) => {
+  authRouter.post("/register", async (req: Request, res: Response) => {
     try {
       const userData = insertUserSchema.parse(req.body);
       
+      // Check if username already exists
       const existingUser = await storage.getUserByUsername(userData.username);
       if (existingUser) {
         return res.status(400).json({ message: "Username already exists" });
       }
       
-      const existingEmail = await storage.getUserByEmail(userData.email);
-      if (existingEmail) {
-        return res.status(400).json({ message: "Email already exists" });
-      }
+      const user = await storage.createUser(userData);
       
-      const newUser = await storage.createUser(userData);
-      req.login(newUser, (err: any) => {
-        if (err) {
-          return res.status(500).json({ message: "Error logging in after registration" });
-        }
-        return res.status(201).json({ user: newUser });
-      });
+      // Remove password from response
+      const { password, ...userWithoutPassword } = user;
+      
+      res.status(201).json(userWithoutPassword);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+        return res.status(400).json({ message: "Invalid user data", errors: error.errors });
       }
-      res.status(500).json({ message: "Error creating user" });
+      res.status(500).json({ message: "Failed to create user" });
     }
   });
   
-  app.get("/api/auth/user", (req: any, res) => {
-    if (req.isAuthenticated()) {
-      res.json({ user: req.user });
-    } else {
-      res.status(401).json({ message: "Not authenticated" });
+  authRouter.post("/login", async (req: Request, res: Response) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password are required" });
+      }
+      
+      const user = await storage.getUserByUsername(username);
+      
+      if (!user || user.password !== password) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+      
+      // Remove password from response
+      const { password: _, ...userWithoutPassword } = user;
+      
+      res.status(200).json(userWithoutPassword);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to authenticate" });
     }
   });
   
-  app.post("/api/auth/logout", (req: any, res) => {
-    req.logout(() => {
-      res.json({ message: "Logged out successfully" });
-    });
-  });
+  app.use("/api/auth", authRouter);
   
   // User routes
-  app.get("/api/users", isAuthenticated, async (req, res) => {
+  const userRouter = express.Router();
+  
+  userRouter.get("/:id", async (req: Request, res: Response) => {
     try {
-      const role = req.query.role as string | undefined;
-      const users = await storage.getUsers(role);
-      res.json(users);
+      const userId = parseInt(req.params.id);
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Remove password from response
+      const { password, ...userWithoutPassword } = user;
+      
+      res.status(200).json(userWithoutPassword);
     } catch (error) {
-      res.status(500).json({ message: "Error fetching users" });
+      res.status(500).json({ message: "Failed to get user" });
     }
   });
+  
+  userRouter.patch("/:id", async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const userData = req.body;
+      
+      // Don't allow password updates through this endpoint
+      if (userData.password) {
+        delete userData.password;
+      }
+      
+      const updatedUser = await storage.updateUser(userId, userData);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Remove password from response
+      const { password, ...userWithoutPassword } = updatedUser;
+      
+      res.status(200).json(userWithoutPassword);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+  
+  app.use("/api/users", userRouter);
   
   // Workout routes
-  app.get("/api/workouts", async (req, res) => {
+  const workoutRouter = express.Router();
+  
+  workoutRouter.get("/", async (req: Request, res: Response) => {
     try {
-      const type = req.query.type as string | undefined;
-      const equipment = req.query.equipment ? (req.query.equipment as string).split(',') : undefined;
-      const workouts = await storage.getWorkouts(type, equipment);
-      res.json(workouts);
+      const workouts = await storage.getAllWorkouts();
+      res.status(200).json(workouts);
     } catch (error) {
-      res.status(500).json({ message: "Error fetching workouts" });
+      res.status(500).json({ message: "Failed to get workouts" });
     }
   });
   
-  app.get("/api/workouts/:id", async (req, res) => {
+  workoutRouter.get("/:id", async (req: Request, res: Response) => {
     try {
-      const id = parseInt(req.params.id);
-      const workout = await storage.getWorkout(id);
+      const workoutId = parseInt(req.params.id);
+      const workout = await storage.getWorkout(workoutId);
+      
       if (!workout) {
         return res.status(404).json({ message: "Workout not found" });
       }
-      res.json(workout);
+      
+      res.status(200).json(workout);
     } catch (error) {
-      res.status(500).json({ message: "Error fetching workout" });
+      res.status(500).json({ message: "Failed to get workout" });
     }
   });
   
-  app.post("/api/workouts", isAuthenticated, async (req, res) => {
+  workoutRouter.post("/", async (req: Request, res: Response) => {
     try {
       const workoutData = insertWorkoutSchema.parse(req.body);
       const workout = await storage.createWorkout(workoutData);
       res.status(201).json(workout);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+        return res.status(400).json({ message: "Invalid workout data", errors: error.errors });
       }
-      res.status(500).json({ message: "Error creating workout" });
+      res.status(500).json({ message: "Failed to create workout" });
     }
   });
   
-  // Meal routes
-  app.get("/api/meals", async (req, res) => {
+  workoutRouter.get("/:id/exercises", async (req: Request, res: Response) => {
     try {
-      const type = req.query.type as string | undefined;
-      const meals = await storage.getMeals(type);
-      res.json(meals);
+      const workoutId = parseInt(req.params.id);
+      const workoutExercises = await storage.getWorkoutExercises(workoutId);
+      res.status(200).json(workoutExercises);
     } catch (error) {
-      res.status(500).json({ message: "Error fetching meals" });
+      res.status(500).json({ message: "Failed to get workout exercises" });
     }
   });
   
-  app.get("/api/meals/:id", async (req, res) => {
+  workoutRouter.post("/recommend", async (req: Request, res: Response) => {
     try {
-      const id = parseInt(req.params.id);
-      const meal = await storage.getMeal(id);
-      if (!meal) {
-        return res.status(404).json({ message: "Meal not found" });
+      const { equipment, muscleGroups } = req.body;
+      
+      if (!Array.isArray(equipment) || !Array.isArray(muscleGroups)) {
+        return res.status(400).json({ message: "Equipment and muscleGroups must be arrays" });
       }
-      res.json(meal);
+      
+      const workouts = await storage.recommendWorkouts(equipment, muscleGroups);
+      res.status(200).json(workouts);
     } catch (error) {
-      res.status(500).json({ message: "Error fetching meal" });
+      res.status(500).json({ message: "Failed to recommend workouts" });
     }
   });
   
-  app.post("/api/meals", isAuthenticated, async (req, res) => {
+  app.use("/api/workouts", workoutRouter);
+  
+  // Exercise routes
+  const exerciseRouter = express.Router();
+  
+  exerciseRouter.get("/", async (req: Request, res: Response) => {
     try {
-      const mealData = insertMealSchema.parse(req.body);
-      const meal = await storage.createMeal(mealData);
-      res.status(201).json(meal);
+      const muscleGroup = req.query.muscleGroup as string;
+      
+      if (muscleGroup) {
+        const exercises = await storage.getExercisesByMuscleGroup(muscleGroup);
+        return res.status(200).json(exercises);
+      }
+      
+      const exercises = await storage.getAllExercises();
+      res.status(200).json(exercises);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get exercises" });
+    }
+  });
+  
+  exerciseRouter.get("/:id", async (req: Request, res: Response) => {
+    try {
+      const exerciseId = parseInt(req.params.id);
+      const exercise = await storage.getExercise(exerciseId);
+      
+      if (!exercise) {
+        return res.status(404).json({ message: "Exercise not found" });
+      }
+      
+      res.status(200).json(exercise);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get exercise" });
+    }
+  });
+  
+  exerciseRouter.post("/", async (req: Request, res: Response) => {
+    try {
+      const exerciseData = insertExerciseSchema.parse(req.body);
+      const exercise = await storage.createExercise(exerciseData);
+      res.status(201).json(exercise);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+        return res.status(400).json({ message: "Invalid exercise data", errors: error.errors });
       }
-      res.status(500).json({ message: "Error creating meal" });
+      res.status(500).json({ message: "Failed to create exercise" });
     }
   });
   
-  // User Progress routes
-  app.get("/api/user-progress", isAuthenticated, async (req: any, res) => {
+  app.use("/api/exercises", exerciseRouter);
+  
+  // Food routes
+  const foodRouter = express.Router();
+  
+  foodRouter.get("/", async (req: Request, res: Response) => {
     try {
-      const userId = req.user.id;
-      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
-      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+      const category = req.query.category as string;
       
-      const progress = await storage.getUserProgress(userId, startDate, endDate);
-      res.json(progress);
+      if (category) {
+        const foods = await storage.getFoodsByCategory(category);
+        return res.status(200).json(foods);
+      }
+      
+      const foods = await storage.getAllFoods();
+      res.status(200).json(foods);
     } catch (error) {
-      res.status(500).json({ message: "Error fetching user progress" });
+      res.status(500).json({ message: "Failed to get foods" });
     }
   });
   
-  app.post("/api/user-progress", isAuthenticated, async (req: any, res) => {
+  foodRouter.get("/:id", async (req: Request, res: Response) => {
     try {
-      const userId = req.user.id;
-      const progressData = insertUserProgressSchema.parse({ ...req.body, userId });
+      const foodId = parseInt(req.params.id);
+      const food = await storage.getFood(foodId);
       
-      const progress = await storage.createUserProgress(progressData);
+      if (!food) {
+        return res.status(404).json({ message: "Food not found" });
+      }
+      
+      res.status(200).json(food);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get food" });
+    }
+  });
+  
+  foodRouter.post("/", async (req: Request, res: Response) => {
+    try {
+      const foodData = insertFoodSchema.parse(req.body);
+      const food = await storage.createFood(foodData);
+      res.status(201).json(food);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid food data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create food" });
+    }
+  });
+  
+  app.use("/api/foods", foodRouter);
+  
+  // Meal Plan routes
+  const mealPlanRouter = express.Router();
+  
+  mealPlanRouter.get("/:userId/today", async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const today = new Date();
+      const formattedDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      
+      const mealPlan = await storage.getMealPlan(userId, formattedDate);
+      
+      if (!mealPlan) {
+        return res.status(404).json({ message: "Meal plan not found for today" });
+      }
+      
+      res.status(200).json(mealPlan);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get meal plan" });
+    }
+  });
+  
+  mealPlanRouter.post("/", async (req: Request, res: Response) => {
+    try {
+      const mealPlanData = insertMealPlanSchema.parse(req.body);
+      const mealPlan = await storage.createMealPlan(mealPlanData);
+      res.status(201).json(mealPlan);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid meal plan data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create meal plan" });
+    }
+  });
+  
+  mealPlanRouter.patch("/:id", async (req: Request, res: Response) => {
+    try {
+      const mealPlanId = parseInt(req.params.id);
+      const mealPlanData = req.body;
+      
+      const updatedMealPlan = await storage.updateMealPlan(mealPlanId, mealPlanData);
+      
+      if (!updatedMealPlan) {
+        return res.status(404).json({ message: "Meal plan not found" });
+      }
+      
+      res.status(200).json(updatedMealPlan);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update meal plan" });
+    }
+  });
+  
+  app.use("/api/meal-plans", mealPlanRouter);
+  
+  // Workout Log routes
+  const workoutLogRouter = express.Router();
+  
+  workoutLogRouter.get("/user/:userId", async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const workoutLogs = await storage.getUserWorkoutLogs(userId);
+      res.status(200).json(workoutLogs);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get workout logs" });
+    }
+  });
+  
+  workoutLogRouter.get("/user/:userId/range", async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const startDate = new Date(req.query.startDate as string);
+      const endDate = new Date(req.query.endDate as string);
+      
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        return res.status(400).json({ message: "Invalid date format" });
+      }
+      
+      const workoutLogs = await storage.getWorkoutLogsInDateRange(userId, startDate, endDate);
+      res.status(200).json(workoutLogs);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get workout logs" });
+    }
+  });
+  
+  workoutLogRouter.post("/", async (req: Request, res: Response) => {
+    try {
+      const workoutLogData = insertWorkoutLogSchema.parse(req.body);
+      const workoutLog = await storage.createWorkoutLog(workoutLogData);
+      res.status(201).json(workoutLog);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid workout log data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create workout log" });
+    }
+  });
+  
+  app.use("/api/workout-logs", workoutLogRouter);
+  
+  // Progress routes
+  const progressRouter = express.Router();
+  
+  progressRouter.get("/user/:userId", async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const progressData = await storage.getUserProgressData(userId);
+      res.status(200).json(progressData);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get progress data" });
+    }
+  });
+  
+  progressRouter.get("/user/:userId/range", async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const startDate = new Date(req.query.startDate as string);
+      const endDate = new Date(req.query.endDate as string);
+      
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        return res.status(400).json({ message: "Invalid date format" });
+      }
+      
+      const progressData = await storage.getProgressInDateRange(userId, startDate, endDate);
+      res.status(200).json(progressData);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get progress data" });
+    }
+  });
+  
+  progressRouter.post("/", async (req: Request, res: Response) => {
+    try {
+      const progressData = insertProgressDataSchema.parse(req.body);
+      const progress = await storage.createProgressData(progressData);
       res.status(201).json(progress);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+        return res.status(400).json({ message: "Invalid progress data", errors: error.errors });
       }
-      res.status(500).json({ message: "Error creating user progress" });
+      res.status(500).json({ message: "Failed to create progress data" });
     }
   });
   
-  // Class routes
-  app.get("/api/classes", async (req, res) => {
-    try {
-      const type = req.query.type as string | undefined;
-      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
-      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
-      
-      const classes = await storage.getClasses(type, startDate, endDate);
-      res.json(classes);
-    } catch (error) {
-      res.status(500).json({ message: "Error fetching classes" });
-    }
-  });
-  
-  app.get("/api/classes/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const classData = await storage.getClass(id);
-      if (!classData) {
-        return res.status(404).json({ message: "Class not found" });
-      }
-      res.json(classData);
-    } catch (error) {
-      res.status(500).json({ message: "Error fetching class" });
-    }
-  });
-  
-  app.post("/api/classes", isAuthenticated, async (req: any, res) => {
-    try {
-      // Only trainers can create classes
-      if (req.user.role !== "trainer") {
-        return res.status(403).json({ message: "Only trainers can create classes" });
-      }
-      
-      const classData = insertClassSchema.parse({ ...req.body, trainerId: req.user.id });
-      const newClass = await storage.createClass(classData);
-      res.status(201).json(newClass);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid input", errors: error.errors });
-      }
-      res.status(500).json({ message: "Error creating class" });
-    }
-  });
-  
-  // Class Enrollment routes
-  app.get("/api/enrollments", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const enrollments = await storage.getClassEnrollments(undefined, userId);
-      res.json(enrollments);
-    } catch (error) {
-      res.status(500).json({ message: "Error fetching enrollments" });
-    }
-  });
-  
-  app.post("/api/enrollments", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const enrollmentData = insertClassEnrollmentSchema.parse({ ...req.body, userId });
-      
-      // Check if already enrolled
-      const existingEnrollments = await storage.getClassEnrollments(enrollmentData.classId, userId);
-      if (existingEnrollments.length > 0) {
-        return res.status(400).json({ message: "Already enrolled in this class" });
-      }
-      
-      // Check if class exists and has space
-      const classData = await storage.getClass(enrollmentData.classId);
-      if (!classData) {
-        return res.status(404).json({ message: "Class not found" });
-      }
-      
-      if (classData.maxParticipants && classData.currentParticipants >= classData.maxParticipants) {
-        return res.status(400).json({ message: "Class is full" });
-      }
-      
-      // Create enrollment and update class participant count
-      const enrollment = await storage.createClassEnrollment(enrollmentData);
-      await storage.updateClassParticipants(enrollmentData.classId, true);
-      
-      res.status(201).json(enrollment);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid input", errors: error.errors });
-      }
-      res.status(500).json({ message: "Error creating enrollment" });
-    }
-  });
-  
-  app.delete("/api/enrollments/:classId", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const classId = parseInt(req.params.classId);
-      
-      const success = await storage.deleteClassEnrollment(classId, userId);
-      if (!success) {
-        return res.status(404).json({ message: "Enrollment not found" });
-      }
-      
-      // Update class participant count
-      await storage.updateClassParticipants(classId, false);
-      
-      res.json({ message: "Enrollment canceled successfully" });
-    } catch (error) {
-      res.status(500).json({ message: "Error canceling enrollment" });
-    }
-  });
+  app.use("/api/progress", progressRouter);
   
   // Message routes
-  app.get("/api/messages", isAuthenticated, async (req: any, res) => {
+  const messageRouter = express.Router();
+  
+  messageRouter.get("/user/:userId", async (req: Request, res: Response) => {
     try {
-      const userId = req.user.id;
-      
-      // Get messages sent to or by the user
-      const sentMessages = await storage.getMessages(userId);
-      const receivedMessages = await storage.getMessages(undefined, userId);
-      
-      const messages = [...sentMessages, ...receivedMessages]
-        .sort((a, b) => b.sentAt.getTime() - a.sentAt.getTime());
-      
-      res.json(messages);
+      const userId = parseInt(req.params.userId);
+      const messages = await storage.getUserMessages(userId);
+      res.status(200).json(messages);
     } catch (error) {
-      res.status(500).json({ message: "Error fetching messages" });
+      res.status(500).json({ message: "Failed to get messages" });
     }
   });
   
-  app.post("/api/messages", isAuthenticated, async (req: any, res) => {
+  messageRouter.post("/", async (req: Request, res: Response) => {
     try {
-      const senderId = req.user.id;
-      const messageData = insertMessageSchema.parse({ ...req.body, senderId });
-      
-      // Check if receiver exists
-      const receiver = await storage.getUser(messageData.receiverId);
-      if (!receiver) {
-        return res.status(404).json({ message: "Receiver not found" });
-      }
-      
+      const messageData = insertMessageSchema.parse(req.body);
       const message = await storage.createMessage(messageData);
       res.status(201).json(message);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+        return res.status(400).json({ message: "Invalid message data", errors: error.errors });
       }
-      res.status(500).json({ message: "Error sending message" });
+      res.status(500).json({ message: "Failed to create message" });
     }
   });
   
-  app.put("/api/messages/:id/read", isAuthenticated, async (req, res) => {
+  messageRouter.patch("/:id/read", async (req: Request, res: Response) => {
     try {
-      const id = parseInt(req.params.id);
-      const success = await storage.markMessageAsRead(id);
-      if (!success) {
+      const messageId = parseInt(req.params.id);
+      const updatedMessage = await storage.markMessageAsRead(messageId);
+      
+      if (!updatedMessage) {
         return res.status(404).json({ message: "Message not found" });
       }
-      res.json({ message: "Message marked as read" });
+      
+      res.status(200).json(updatedMessage);
     } catch (error) {
-      res.status(500).json({ message: "Error updating message" });
+      res.status(500).json({ message: "Failed to mark message as read" });
     }
   });
   
-  // Dashboard data
-  app.get("/api/dashboard", isAuthenticated, async (req: any, res) => {
+  app.use("/api/messages", messageRouter);
+  
+  // Class Schedule routes
+  const classScheduleRouter = express.Router();
+  
+  classScheduleRouter.get("/", async (req: Request, res: Response) => {
     try {
-      const userId = req.user.id;
-      const dashboardData = await storage.getUserDashboardData(userId);
-      res.json(dashboardData);
+      const classSchedules = await storage.getAllClassSchedules();
+      res.status(200).json(classSchedules);
     } catch (error) {
-      res.status(500).json({ message: "Error fetching dashboard data" });
+      res.status(500).json({ message: "Failed to get class schedules" });
     }
   });
   
-  // Leaderboard
-  app.get("/api/leaderboard", async (req, res) => {
+  classScheduleRouter.get("/trainer/:trainerId", async (req: Request, res: Response) => {
+    try {
+      const trainerId = parseInt(req.params.trainerId);
+      const classSchedules = await storage.getTrainerClassSchedules(trainerId);
+      res.status(200).json(classSchedules);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get trainer class schedules" });
+    }
+  });
+  
+  classScheduleRouter.post("/", async (req: Request, res: Response) => {
+    try {
+      const classScheduleData = insertClassScheduleSchema.parse(req.body);
+      const classSchedule = await storage.createClassSchedule(classScheduleData);
+      res.status(201).json(classSchedule);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid class schedule data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create class schedule" });
+    }
+  });
+  
+  app.use("/api/class-schedules", classScheduleRouter);
+  
+  // Class Enrollment routes
+  const classEnrollmentRouter = express.Router();
+  
+  classEnrollmentRouter.get("/user/:userId", async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const enrollments = await storage.getUserEnrollments(userId);
+      res.status(200).json(enrollments);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get user enrollments" });
+    }
+  });
+  
+  classEnrollmentRouter.post("/", async (req: Request, res: Response) => {
+    try {
+      const enrollmentData = insertClassEnrollmentSchema.parse(req.body);
+      
+      // Check if class exists and has space
+      const classSchedule = await storage.getClassSchedule(enrollmentData.classId);
+      
+      if (!classSchedule) {
+        return res.status(404).json({ message: "Class not found" });
+      }
+      
+      if (classSchedule.currentParticipants >= classSchedule.maxParticipants) {
+        return res.status(400).json({ message: "Class is full" });
+      }
+      
+      const enrollment = await storage.enrollInClass(enrollmentData);
+      res.status(201).json(enrollment);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid enrollment data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to enroll in class" });
+    }
+  });
+  
+  app.use("/api/class-enrollments", classEnrollmentRouter);
+  
+  // Leaderboard route
+  app.get("/api/leaderboard", async (req: Request, res: Response) => {
     try {
       const leaderboard = await storage.getLeaderboard();
-      res.json(leaderboard);
+      res.status(200).json(leaderboard);
     } catch (error) {
-      res.status(500).json({ message: "Error fetching leaderboard" });
+      res.status(500).json({ message: "Failed to get leaderboard" });
     }
   });
 

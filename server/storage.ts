@@ -1,322 +1,564 @@
 import {
-  users, type User, type InsertUser,
-  workouts, type Workout, type InsertWorkout,
-  meals, type Meal, type InsertMeal,
-  userProgress, type UserProgress, type InsertUserProgress,
-  classes, type Class, type InsertClass,
-  classEnrollments, type ClassEnrollment, type InsertClassEnrollment,
-  messages, type Message, type InsertMessage
+  User, InsertUser, users,
+  Workout, InsertWorkout, workouts,
+  Exercise, InsertExercise, exercises,
+  WorkoutExercise, InsertWorkoutExercise, workoutExercises,
+  Food, InsertFood, foods,
+  MealPlan, InsertMealPlan, mealPlans,
+  WorkoutLog, InsertWorkoutLog, workoutLogs,
+  ProgressData, InsertProgressData, progressData,
+  Message, InsertMessage, messages,
+  ClassSchedule, InsertClassSchedule, classSchedules,
+  ClassEnrollment, InsertClassEnrollment, classEnrollments
 } from "@shared/schema";
 
 export interface IStorage {
   // User methods
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
-  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  getUsers(role?: string): Promise<User[]>;
-  
+  updateUser(id: number, user: Partial<User>): Promise<User | undefined>;
+
   // Workout methods
+  getAllWorkouts(): Promise<Workout[]>;
   getWorkout(id: number): Promise<Workout | undefined>;
-  getWorkouts(type?: string, equipment?: string[]): Promise<Workout[]>;
   createWorkout(workout: InsertWorkout): Promise<Workout>;
-  
-  // Meal methods
-  getMeal(id: number): Promise<Meal | undefined>;
-  getMeals(type?: string): Promise<Meal[]>;
-  createMeal(meal: InsertMeal): Promise<Meal>;
-  
-  // UserProgress methods
-  getUserProgress(userId: number, startDate?: Date, endDate?: Date): Promise<UserProgress[]>;
-  createUserProgress(progress: InsertUserProgress): Promise<UserProgress>;
-  
-  // Class methods
-  getClass(id: number): Promise<Class | undefined>;
-  getClasses(type?: string, startDate?: Date, endDate?: Date): Promise<Class[]>;
-  createClass(classData: InsertClass): Promise<Class>;
-  updateClassParticipants(classId: number, increment: boolean): Promise<Class | undefined>;
-  
-  // Class Enrollment methods
-  getClassEnrollments(classId?: number, userId?: number): Promise<ClassEnrollment[]>;
-  createClassEnrollment(enrollment: InsertClassEnrollment): Promise<ClassEnrollment>;
-  deleteClassEnrollment(classId: number, userId: number): Promise<boolean>;
-  
+  recommendWorkouts(equipment: string[], muscleGroups: string[]): Promise<Workout[]>;
+
+  // Exercise methods
+  getAllExercises(): Promise<Exercise[]>;
+  getExercise(id: number): Promise<Exercise | undefined>;
+  createExercise(exercise: InsertExercise): Promise<Exercise>;
+  getExercisesByMuscleGroup(muscleGroup: string): Promise<Exercise[]>;
+
+  // Workout Exercises methods
+  getWorkoutExercises(workoutId: number): Promise<(WorkoutExercise & { exercise: Exercise })[]>;
+  addExerciseToWorkout(workoutExercise: InsertWorkoutExercise): Promise<WorkoutExercise>;
+
+  // Food methods
+  getAllFoods(): Promise<Food[]>;
+  getFood(id: number): Promise<Food | undefined>;
+  createFood(food: InsertFood): Promise<Food>;
+  getFoodsByCategory(category: string): Promise<Food[]>;
+
+  // Meal Plan methods
+  getMealPlan(userId: number, date: Date): Promise<MealPlan | undefined>;
+  createMealPlan(mealPlan: InsertMealPlan): Promise<MealPlan>;
+  updateMealPlan(id: number, mealPlan: Partial<MealPlan>): Promise<MealPlan | undefined>;
+
+  // Workout Log methods
+  getUserWorkoutLogs(userId: number): Promise<(WorkoutLog & { workout: Workout })[]>;
+  createWorkoutLog(workoutLog: InsertWorkoutLog): Promise<WorkoutLog>;
+  getWorkoutLogsInDateRange(userId: number, startDate: Date, endDate: Date): Promise<WorkoutLog[]>;
+
+  // Progress methods
+  getUserProgressData(userId: number): Promise<ProgressData[]>;
+  createProgressData(progressData: InsertProgressData): Promise<ProgressData>;
+  getProgressInDateRange(userId: number, startDate: Date, endDate: Date): Promise<ProgressData[]>;
+
   // Message methods
-  getMessage(id: number): Promise<Message | undefined>;
-  getMessages(senderId?: number, receiverId?: number): Promise<Message[]>;
+  getUserMessages(userId: number): Promise<(Message & { sender: User })[]>;
   createMessage(message: InsertMessage): Promise<Message>;
-  markMessageAsRead(id: number): Promise<boolean>;
-  
-  // Dashboard Data
-  getUserDashboardData(userId: number): Promise<any>;
-  getLeaderboard(): Promise<any[]>;
+  markMessageAsRead(messageId: number): Promise<Message | undefined>;
+
+  // Class Schedule methods
+  getAllClassSchedules(): Promise<(ClassSchedule & { trainer: User })[]>;
+  getClassSchedule(id: number): Promise<ClassSchedule | undefined>;
+  createClassSchedule(classSchedule: InsertClassSchedule): Promise<ClassSchedule>;
+  getTrainerClassSchedules(trainerId: number): Promise<ClassSchedule[]>;
+
+  // Class Enrollment methods
+  enrollInClass(enrollment: InsertClassEnrollment): Promise<ClassEnrollment>;
+  getUserEnrollments(userId: number): Promise<(ClassEnrollment & { class: ClassSchedule })[]>;
+  getLeaderboard(): Promise<{ user: User; points: number }[]>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private workouts: Map<number, Workout>;
-  private meals: Map<number, Meal>;
-  private userProgresses: Map<number, UserProgress>;
-  private classes: Map<number, Class>;
-  private classEnrollments: Map<number, ClassEnrollment>;
+  private exercises: Map<number, Exercise>;
+  private workoutExercises: Map<number, WorkoutExercise>;
+  private foods: Map<number, Food>;
+  private mealPlans: Map<number, MealPlan>;
+  private workoutLogs: Map<number, WorkoutLog>;
+  private progressData: Map<number, ProgressData>;
   private messages: Map<number, Message>;
+  private classSchedules: Map<number, ClassSchedule>;
+  private classEnrollments: Map<number, ClassEnrollment>;
+  
   private currentIds: {
     users: number;
     workouts: number;
-    meals: number;
-    userProgresses: number;
-    classes: number;
-    classEnrollments: number;
+    exercises: number;
+    workoutExercises: number;
+    foods: number;
+    mealPlans: number;
+    workoutLogs: number;
+    progressData: number;
     messages: number;
+    classSchedules: number;
+    classEnrollments: number;
   };
 
   constructor() {
     this.users = new Map();
     this.workouts = new Map();
-    this.meals = new Map();
-    this.userProgresses = new Map();
-    this.classes = new Map();
-    this.classEnrollments = new Map();
+    this.exercises = new Map();
+    this.workoutExercises = new Map();
+    this.foods = new Map();
+    this.mealPlans = new Map();
+    this.workoutLogs = new Map();
+    this.progressData = new Map();
     this.messages = new Map();
+    this.classSchedules = new Map();
+    this.classEnrollments = new Map();
+    
     this.currentIds = {
       users: 1,
       workouts: 1,
-      meals: 1,
-      userProgresses: 1,
-      classes: 1,
-      classEnrollments: 1,
+      exercises: 1,
+      workoutExercises: 1,
+      foods: 1,
+      mealPlans: 1,
+      workoutLogs: 1,
+      progressData: 1,
       messages: 1,
+      classSchedules: 1,
+      classEnrollments: 1
     };
-    
+
     // Initialize with sample data
     this.initializeData();
   }
 
-  // Initialize with some basic data for demo purposes
   private initializeData() {
-    // Add some users
-    const users = [
-      { username: "ananya", password: "password123", email: "ananya@example.com", fullName: "Ananya Sharma", city: "Bangalore", role: "user" },
-      { username: "priya", password: "password123", email: "priya@example.com", fullName: "Priya Patel", city: "Mumbai", role: "trainer" },
-      { username: "rahul", password: "password123", email: "rahul@example.com", fullName: "Rahul Kumar", city: "Delhi", role: "trainer" },
-      { username: "arjun", password: "password123", email: "arjun@example.com", fullName: "Arjun Patel", city: "Mumbai", role: "user" },
-      { username: "diya", password: "password123", email: "diya@example.com", fullName: "Diya Sharma", city: "Delhi", role: "user" },
-    ];
-    
-    users.forEach(user => this.createUser(user));
-    
-    // Add some workouts
-    const workouts = [
+    // Add a sample user
+    const user: User = {
+      id: 1,
+      username: "rahul_sharma",
+      password: "password123", // In real app, this would be hashed
+      firstName: "Rahul",
+      lastName: "Sharma",
+      email: "rahul@example.com",
+      profileImage: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80",
+      weight: 75,
+      height: 175,
+      age: 28,
+      gender: "male",
+      goal: "weight_loss",
+      isTrainer: false,
+      plan: "Premium"
+    };
+    this.users.set(1, user);
+    this.currentIds.users = 2;
+
+    // Add a trainer user
+    const trainer: User = {
+      id: 2,
+      username: "priya_patel",
+      password: "password123",
+      firstName: "Priya",
+      lastName: "Patel",
+      email: "priya@example.com",
+      profileImage: "https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80",
+      weight: 58,
+      height: 165,
+      age: 30,
+      gender: "female",
+      goal: "fitness",
+      isTrainer: true,
+      plan: "Trainer"
+    };
+    this.users.set(2, trainer);
+
+    // Add another trainer
+    const trainer2: User = {
+      id: 3,
+      username: "amit_kumar",
+      password: "password123",
+      firstName: "Amit",
+      lastName: "Kumar",
+      email: "amit@example.com",
+      profileImage: "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80",
+      weight: 72,
+      height: 178,
+      age: 35,
+      gender: "male",
+      goal: "fitness",
+      isTrainer: true,
+      plan: "Trainer"
+    };
+    this.users.set(3, trainer2);
+
+    // Add more sample users for leaderboard
+    const user2: User = {
+      id: 4,
+      username: "neha_gupta",
+      password: "password123",
+      firstName: "Neha",
+      lastName: "Gupta",
+      email: "neha@example.com",
+      profileImage: "https://images.unsplash.com/photo-1639149888905-fb39731f2e6c?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80",
+      weight: 62,
+      height: 163,
+      age: 27,
+      gender: "female",
+      goal: "weight_loss",
+      isTrainer: false,
+      plan: "Premium"
+    };
+    this.users.set(4, user2);
+
+    const user3: User = {
+      id: 5,
+      username: "vikram_singh",
+      password: "password123",
+      firstName: "Vikram",
+      lastName: "Singh",
+      email: "vikram@example.com",
+      profileImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80",
+      weight: 80,
+      height: 180,
+      age: 32,
+      gender: "male",
+      goal: "muscle_gain",
+      isTrainer: false,
+      plan: "Premium"
+    };
+    this.users.set(5, user3);
+
+    const user4: User = {
+      id: 6,
+      username: "ananya_desai",
+      password: "password123",
+      firstName: "Ananya",
+      lastName: "Desai",
+      email: "ananya@example.com",
+      profileImage: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80",
+      weight: 55,
+      height: 160,
+      age: 25,
+      gender: "female",
+      goal: "fitness",
+      isTrainer: false,
+      plan: "Basic"
+    };
+    this.users.set(6, user4);
+    this.currentIds.users = 7;
+
+    // Add sample exercises
+    const exercises: Exercise[] = [
       {
-        name: "Upper Body Strength",
-        description: "A workout focused on building upper body strength",
-        type: "strength",
-        equipmentNeeded: ["dumbbells", "bench"],
-        exercises: [
-          { name: "Bench Press", sets: 3, reps: 12, weight: 45 },
-          { name: "Pull-ups", sets: 3, reps: 8 },
-          { name: "Shoulder Press", sets: 3, reps: 10, weight: 27.5 }
-        ]
+        id: 1,
+        name: "Push-ups",
+        description: "A compound exercise that works the chest, shoulders, and triceps.",
+        muscleGroup: "chest",
+        equipmentRequired: "none",
+        difficultyLevel: "beginner",
+        imageUrl: "",
+        videoUrl: ""
       },
       {
-        name: "Lower Body Power",
-        description: "A workout focused on building lower body power",
-        type: "strength",
-        equipmentNeeded: ["barbell", "squat rack"],
-        exercises: [
-          { name: "Squats", sets: 4, reps: 10, weight: 60 },
-          { name: "Deadlifts", sets: 3, reps: 8, weight: 80 },
-          { name: "Lunges", sets: 3, reps: 12, weight: 20 }
-        ]
+        id: 2,
+        name: "Dumbbell Shoulder Press",
+        description: "An exercise that targets the shoulders and upper back.",
+        muscleGroup: "shoulders",
+        equipmentRequired: "dumbbells",
+        difficultyLevel: "intermediate",
+        imageUrl: "",
+        videoUrl: ""
       },
       {
-        name: "HIIT Cardio",
-        description: "High-intensity interval training for cardiovascular fitness",
-        type: "cardio",
-        equipmentNeeded: [],
-        exercises: [
-          { name: "Jumping Jacks", duration: 45, rest: 15 },
-          { name: "Burpees", duration: 45, rest: 15 },
-          { name: "Mountain Climbers", duration: 45, rest: 15 },
-          { name: "High Knees", duration: 45, rest: 15 }
-        ]
+        id: 3,
+        name: "Tricep Dips",
+        description: "An isolation exercise that targets the triceps.",
+        muscleGroup: "triceps",
+        equipmentRequired: "bench",
+        difficultyLevel: "beginner",
+        imageUrl: "",
+        videoUrl: ""
+      },
+      {
+        id: 4,
+        name: "Lateral Raises",
+        description: "An isolation exercise that targets the lateral deltoids.",
+        muscleGroup: "shoulders",
+        equipmentRequired: "dumbbells",
+        difficultyLevel: "beginner",
+        imageUrl: "",
+        videoUrl: ""
       }
     ];
-    
-    workouts.forEach(workout => this.createWorkout(workout));
-    
-    // Add some meals
-    const meals = [
+
+    exercises.forEach(exercise => {
+      this.exercises.set(exercise.id, exercise);
+    });
+    this.currentIds.exercises = 5;
+
+    // Add sample workouts
+    const workout: Workout = {
+      id: 1,
+      name: "Upper Body Strength",
+      description: "Focus on chest, shoulders, and triceps with equipment you have available.",
+      duration: 45,
+      difficulty: "intermediate",
+      equipmentRequired: ["dumbbells", "bench"],
+      targetMuscleGroups: ["chest", "shoulders", "triceps"],
+      imageUrl: ""
+    };
+    this.workouts.set(1, workout);
+    this.currentIds.workouts = 2;
+
+    // Add workout exercises
+    const workoutExercises: WorkoutExercise[] = [
       {
+        id: 1,
+        workoutId: 1,
+        exerciseId: 1,
+        sets: 3,
+        reps: 12,
+        restTime: 60
+      },
+      {
+        id: 2,
+        workoutId: 1,
+        exerciseId: 2,
+        sets: 3,
+        reps: 10,
+        restTime: 60
+      },
+      {
+        id: 3,
+        workoutId: 1,
+        exerciseId: 3,
+        sets: 3,
+        reps: 15,
+        restTime: 60
+      },
+      {
+        id: 4,
+        workoutId: 1,
+        exerciseId: 4,
+        sets: 3,
+        reps: 12,
+        restTime: 60
+      }
+    ];
+
+    workoutExercises.forEach(workoutExercise => {
+      this.workoutExercises.set(workoutExercise.id, workoutExercise);
+    });
+    this.currentIds.workoutExercises = 5;
+
+    // Add sample foods
+    const foods: Food[] = [
+      {
+        id: 1,
         name: "Masala Oats with Vegetables",
-        description: "Nutritious breakfast option packed with protein and fiber",
-        type: "breakfast",
-        calories: 420,
-        protein: 28,
-        carbs: 55,
-        fats: 10,
-        image: "https://images.unsplash.com/photo-1525351484163-7529414344d8",
-        ingredients: ["oats", "mixed vegetables", "olive oil", "spices"]
+        calories: 250,
+        protein: 10,
+        carbs: 40,
+        fat: 5,
+        fiber: 6,
+        category: "breakfast",
+        imageUrl: ""
       },
       {
-        name: "Paneer Salad with Mixed Greens",
-        description: "Protein-rich lunch option with fresh vegetables",
-        type: "lunch",
-        calories: 580,
-        protein: 32,
-        carbs: 30,
-        fats: 35,
-        image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd",
-        ingredients: ["paneer", "mixed greens", "cherry tomatoes", "cucumber", "olive oil", "lemon juice"]
-      },
-      {
-        name: "Dal Tadka with Brown Rice",
-        description: "Traditional Indian dinner rich in protein and complex carbs",
-        type: "dinner",
-        calories: 520,
-        protein: 18,
+        id: 2,
+        name: "Brown Rice with Dal and Mixed Vegetables",
+        calories: 400,
+        protein: 15,
         carbs: 70,
-        fats: 15,
-        image: "https://images.unsplash.com/photo-1547592180-85f173990554",
-        ingredients: ["lentils", "brown rice", "spices", "ghee"]
+        fat: 4,
+        fiber: 8,
+        category: "lunch",
+        imageUrl: ""
+      },
+      {
+        id: 3,
+        name: "Vegetable Curry with Chapati",
+        calories: 450,
+        protein: 12,
+        carbs: 65,
+        fat: 10,
+        fiber: 7,
+        category: "dinner",
+        imageUrl: ""
       }
     ];
+
+    foods.forEach(food => {
+      this.foods.set(food.id, food);
+    });
+    this.currentIds.foods = 4;
+
+    // Add sample meal plan
+    const today = new Date();
+    const formattedDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     
-    meals.forEach(meal => this.createMeal(meal));
-    
-    // Add some classes
-    const now = new Date();
-    const todayAt530PM = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 17, 30);
-    const tomorrowAt7AM = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 7, 0);
-    const wednesdayAt6PM = new Date(now.getFullYear(), now.getMonth(), now.getDate() + ((3 - now.getDay() + 7) % 7), 18, 0);
-    
-    const classes = [
+    const mealPlan: MealPlan = {
+      id: 1,
+      userId: 1,
+      date: formattedDate,
+      meals: [
+        { foodId: 1, time: "8:00 AM", type: "breakfast", quantity: 1 },
+        { foodId: 2, time: "1:00 PM", type: "lunch", quantity: 1 },
+        { foodId: 3, time: "8:00 PM", type: "dinner", quantity: 1 }
+      ]
+    };
+    this.mealPlans.set(1, mealPlan);
+    this.currentIds.mealPlans = 2;
+
+    // Add sample workout logs for the current week
+    const pastDates = [];
+    for (let i = 7; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      pastDates.push(new Date(date.getFullYear(), date.getMonth(), date.getDate()));
+    }
+
+    const workoutLogs: WorkoutLog[] = [
       {
-        name: "Yoga with Priya",
-        description: "A calming yoga session to improve flexibility and reduce stress",
-        trainerId: 2, // Priya's ID
-        startTime: todayAt530PM,
+        id: 1,
+        userId: 1,
+        workoutId: 1,
+        date: pastDates[2],
         duration: 45,
-        maxParticipants: 20,
-        type: "yoga"
+        caloriesBurned: 320,
+        completed: true
       },
       {
-        name: "HIIT with Rahul",
-        description: "High-intensity interval training for maximum calorie burn",
-        trainerId: 3, // Rahul's ID
-        startTime: tomorrowAt7AM,
-        duration: 30,
-        maxParticipants: 15,
-        type: "hiit"
-      },
-      {
-        name: "Strength Training",
-        description: "Build muscle and improve overall strength",
-        trainerId: 3, // Rahul's ID
-        startTime: wednesdayAt6PM,
-        duration: 60,
-        maxParticipants: 12,
-        type: "strength"
-      }
-    ];
-    
-    classes.forEach(classData => this.createClass(classData));
-    
-    // Enroll Ananya in Yoga class
-    this.createClassEnrollment({ classId: 1, userId: 1 });
-    // Update class participant count
-    this.updateClassParticipants(1, true);
-    
-    // Add some user progress data for Ananya
-    const userProgressData = [
-      {
+        id: 2,
         userId: 1,
-        date: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6),
-        workoutCompleted: true,
         workoutId: 1,
-        workoutDuration: 45,
+        date: pastDates[4],
+        duration: 50,
         caloriesBurned: 350,
-        caloriesConsumed: 1800,
-        waterIntake: 2.0,
+        completed: true
       },
       {
+        id: 3,
         userId: 1,
-        date: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 5),
-        workoutCompleted: true,
-        workoutId: 2,
-        workoutDuration: 60,
-        caloriesBurned: 420,
-        caloriesConsumed: 1750,
-        waterIntake: 2.2,
-      },
-      {
-        userId: 1,
-        date: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 4),
-        workoutCompleted: false,
-        caloriesConsumed: 1900,
-        waterIntake: 1.8,
-      },
-      {
-        userId: 1,
-        date: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 3),
-        workoutCompleted: true,
-        workoutId: 3,
-        workoutDuration: 30,
-        caloriesBurned: 280,
-        caloriesConsumed: 1820,
-        waterIntake: 1.5,
-      },
-      {
-        userId: 1,
-        date: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 2),
-        workoutCompleted: true,
         workoutId: 1,
-        workoutDuration: 75,
-        caloriesBurned: 510,
-        caloriesConsumed: 1700,
-        waterIntake: 2.5,
+        date: pastDates[5],
+        duration: 45,
+        caloriesBurned: 320,
+        completed: true
       },
       {
+        id: 4,
         userId: 1,
-        date: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1),
-        workoutCompleted: true,
-        workoutId: 2,
-        workoutDuration: 90,
-        caloriesBurned: 650,
-        caloriesConsumed: 1770,
-        waterIntake: 2.0,
-      },
-      {
-        userId: 1,
-        date: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
-        workoutCompleted: false,
-        caloriesConsumed: 1245,
-        waterIntake: 1.5,
+        workoutId: 1,
+        date: pastDates[7],
+        duration: 48,
+        caloriesBurned: 330,
+        completed: true
       }
     ];
-    
-    userProgressData.forEach(progress => this.createUserProgress(progress));
-    
-    // Add some messages
-    const messages = [
+
+    workoutLogs.forEach(workoutLog => {
+      this.workoutLogs.set(workoutLog.id, workoutLog);
+    });
+    this.currentIds.workoutLogs = 5;
+
+    // Add sample progress data for the past month
+    const progressEntries = [
+      { date: new Date(2023, 3, 15), weight: 78 },
+      { date: new Date(2023, 3, 22), weight: 77.5 },
+      { date: new Date(2023, 3, 29), weight: 76.8 },
+      { date: new Date(2023, 4, 6), weight: 76 },
+      { date: new Date(2023, 4, 13), weight: 75.5 }
+    ];
+
+    progressEntries.forEach((entry, index) => {
+      const progressEntry: ProgressData = {
+        id: index + 1,
+        userId: 1,
+        date: entry.date,
+        weight: entry.weight,
+        bodyFat: undefined,
+        notes: ""
+      };
+      this.progressData.set(progressEntry.id, progressEntry);
+    });
+    this.currentIds.progressData = progressEntries.length + 1;
+
+    // Add sample messages
+    const messages: Message[] = [
       {
-        senderId: 2, // Priya
-        receiverId: 1, // Ananya
-        content: "Hi Ananya, are you ready for our yoga session today?"
+        id: 1,
+        senderId: 2, // Priya (trainer)
+        receiverId: 1, // Rahul (user)
+        message: "Great job on completing your leg workout yesterday! I've updated your plan for next week with progressive overload. Let me know if you have questions.",
+        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+        read: false
       },
       {
-        senderId: 1, // Ananya
-        receiverId: 2, // Priya
-        content: "Yes, I'm looking forward to it!"
-      },
-      {
-        senderId: 3, // Rahul
-        receiverId: 1, // Ananya
-        content: "Don't forget to bring a yoga mat to class today!"
+        id: 2,
+        senderId: 3, // Amit (trainer)
+        receiverId: 1, // Rahul (user)
+        message: "Remember to increase your water intake during these hot months. I noticed your hydration tracking is lower than recommended.",
+        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
+        read: false
       }
     ];
+
+    messages.forEach(message => {
+      this.messages.set(message.id, message);
+    });
+    this.currentIds.messages = 3;
+
+    // Add sample class schedules
+    const futureDate1 = new Date();
+    futureDate1.setDate(futureDate1.getDate() + 1);
+    futureDate1.setHours(9, 0, 0, 0);
     
-    messages.forEach(message => this.createMessage(message));
+    const futureDate2 = new Date();
+    futureDate2.setDate(futureDate2.getDate() + 1);
+    futureDate2.setHours(10, 0, 0, 0);
+
+    const classSchedules: ClassSchedule[] = [
+      {
+        id: 1,
+        trainerId: 2,
+        className: "Morning Yoga",
+        description: "Start your day with energizing yoga flows",
+        startTime: futureDate1,
+        endTime: new Date(futureDate1.getTime() + 60 * 60 * 1000), // 1 hour later
+        maxParticipants: 10,
+        currentParticipants: 5
+      },
+      {
+        id: 2,
+        trainerId: 3,
+        className: "HIIT Workout",
+        description: "High intensity interval training for maximum calorie burn",
+        startTime: futureDate2,
+        endTime: new Date(futureDate2.getTime() + 45 * 60 * 1000), // 45 minutes later
+        maxParticipants: 15,
+        currentParticipants: 8
+      }
+    ];
+
+    classSchedules.forEach(classSchedule => {
+      this.classSchedules.set(classSchedule.id, classSchedule);
+    });
+    this.currentIds.classSchedules = 3;
+
+    // Add sample class enrollments
+    const enrollments: ClassEnrollment[] = [
+      {
+        id: 1,
+        classId: 1,
+        userId: 1,
+        enrollmentDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) // 2 days ago
+      }
+    ];
+
+    enrollments.forEach(enrollment => {
+      this.classEnrollments.set(enrollment.id, enrollment);
+    });
+    this.currentIds.classEnrollments = 2;
   }
 
   // User methods
@@ -329,377 +571,329 @@ export class MemStorage implements IStorage {
       (user) => user.username === username,
     );
   }
-  
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.email === email,
-    );
-  }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentIds.users++;
-    const now = new Date();
-    const user: User = { ...insertUser, id, createdAt: now };
+    const user: User = { ...insertUser, id };
     this.users.set(id, user);
     return user;
   }
-  
-  async getUsers(role?: string): Promise<User[]> {
-    let users = Array.from(this.users.values());
-    if (role) {
-      users = users.filter(user => user.role === role);
-    }
-    return users;
+
+  async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    
+    const updatedUser = { ...user, ...userData };
+    this.users.set(id, updatedUser);
+    return updatedUser;
   }
 
   // Workout methods
+  async getAllWorkouts(): Promise<Workout[]> {
+    return Array.from(this.workouts.values());
+  }
+
   async getWorkout(id: number): Promise<Workout | undefined> {
     return this.workouts.get(id);
   }
-  
-  async getWorkouts(type?: string, equipment?: string[]): Promise<Workout[]> {
-    let workouts = Array.from(this.workouts.values());
-    
-    if (type) {
-      workouts = workouts.filter(workout => workout.type === type);
-    }
-    
-    if (equipment && equipment.length > 0) {
-      workouts = workouts.filter(workout => 
-        equipment.some(eq => workout.equipmentNeeded.includes(eq))
-      );
-    }
-    
-    return workouts;
-  }
-  
+
   async createWorkout(insertWorkout: InsertWorkout): Promise<Workout> {
     const id = this.currentIds.workouts++;
-    const now = new Date();
-    const workout: Workout = { ...insertWorkout, id, createdAt: now };
+    const workout: Workout = { ...insertWorkout, id };
     this.workouts.set(id, workout);
     return workout;
   }
 
-  // Meal methods
-  async getMeal(id: number): Promise<Meal | undefined> {
-    return this.meals.get(id);
-  }
-  
-  async getMeals(type?: string): Promise<Meal[]> {
-    let meals = Array.from(this.meals.values());
-    
-    if (type) {
-      meals = meals.filter(meal => meal.type === type);
-    }
-    
-    return meals;
-  }
-  
-  async createMeal(insertMeal: InsertMeal): Promise<Meal> {
-    const id = this.currentIds.meals++;
-    const now = new Date();
-    const meal: Meal = { ...insertMeal, id, createdAt: now };
-    this.meals.set(id, meal);
-    return meal;
+  async recommendWorkouts(equipment: string[], muscleGroups: string[]): Promise<Workout[]> {
+    return Array.from(this.workouts.values()).filter(workout => {
+      const hasRequiredEquipment = equipment.length === 0 || 
+        workout.equipmentRequired.some(eq => equipment.includes(eq));
+      
+      const targetsDesiredMuscles = muscleGroups.length === 0 || 
+        workout.targetMuscleGroups.some(mg => muscleGroups.includes(mg));
+      
+      return hasRequiredEquipment && targetsDesiredMuscles;
+    });
   }
 
-  // UserProgress methods
-  async getUserProgress(userId: number, startDate?: Date, endDate?: Date): Promise<UserProgress[]> {
-    let progress = Array.from(this.userProgresses.values())
-      .filter(p => p.userId === userId);
-    
-    if (startDate) {
-      progress = progress.filter(p => p.date >= startDate);
-    }
-    
-    if (endDate) {
-      progress = progress.filter(p => p.date <= endDate);
-    }
-    
-    return progress.sort((a, b) => a.date.getTime() - b.date.getTime());
-  }
-  
-  async createUserProgress(insertProgress: InsertUserProgress): Promise<UserProgress> {
-    const id = this.currentIds.userProgresses++;
-    const progress: UserProgress = { ...insertProgress, id };
-    this.userProgresses.set(id, progress);
-    return progress;
+  // Exercise methods
+  async getAllExercises(): Promise<Exercise[]> {
+    return Array.from(this.exercises.values());
   }
 
-  // Class methods
-  async getClass(id: number): Promise<Class | undefined> {
-    return this.classes.get(id);
-  }
-  
-  async getClasses(type?: string, startDate?: Date, endDate?: Date): Promise<Class[]> {
-    let classes = Array.from(this.classes.values());
-    
-    if (type) {
-      classes = classes.filter(c => c.type === type);
-    }
-    
-    if (startDate) {
-      classes = classes.filter(c => c.startTime >= startDate);
-    }
-    
-    if (endDate) {
-      classes = classes.filter(c => c.startTime <= endDate);
-    }
-    
-    return classes.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
-  }
-  
-  async createClass(insertClass: InsertClass): Promise<Class> {
-    const id = this.currentIds.classes++;
-    const now = new Date();
-    const classData: Class = { ...insertClass, id, currentParticipants: 0, createdAt: now };
-    this.classes.set(id, classData);
-    return classData;
-  }
-  
-  async updateClassParticipants(classId: number, increment: boolean): Promise<Class | undefined> {
-    const classData = this.classes.get(classId);
-    if (!classData) return undefined;
-    
-    if (increment) {
-      if (classData.maxParticipants && classData.currentParticipants >= classData.maxParticipants) {
-        throw new Error("Class is full");
-      }
-      classData.currentParticipants += 1;
-    } else {
-      if (classData.currentParticipants > 0) {
-        classData.currentParticipants -= 1;
-      }
-    }
-    
-    this.classes.set(classId, classData);
-    return classData;
+  async getExercise(id: number): Promise<Exercise | undefined> {
+    return this.exercises.get(id);
   }
 
-  // Class Enrollment methods
-  async getClassEnrollments(classId?: number, userId?: number): Promise<ClassEnrollment[]> {
-    let enrollments = Array.from(this.classEnrollments.values());
-    
-    if (classId) {
-      enrollments = enrollments.filter(e => e.classId === classId);
-    }
-    
-    if (userId) {
-      enrollments = enrollments.filter(e => e.userId === userId);
-    }
-    
-    return enrollments;
+  async createExercise(insertExercise: InsertExercise): Promise<Exercise> {
+    const id = this.currentIds.exercises++;
+    const exercise: Exercise = { ...insertExercise, id };
+    this.exercises.set(id, exercise);
+    return exercise;
   }
-  
-  async createClassEnrollment(insertEnrollment: InsertClassEnrollment): Promise<ClassEnrollment> {
-    const id = this.currentIds.classEnrollments++;
-    const now = new Date();
-    const enrollment: ClassEnrollment = { ...insertEnrollment, id, enrolledAt: now };
-    this.classEnrollments.set(id, enrollment);
-    return enrollment;
+
+  async getExercisesByMuscleGroup(muscleGroup: string): Promise<Exercise[]> {
+    return Array.from(this.exercises.values()).filter(
+      exercise => exercise.muscleGroup === muscleGroup
+    );
   }
-  
-  async deleteClassEnrollment(classId: number, userId: number): Promise<boolean> {
-    const enrollments = Array.from(this.classEnrollments.values());
-    const enrollment = enrollments.find(e => e.classId === classId && e.userId === userId);
+
+  // Workout Exercises methods
+  async getWorkoutExercises(workoutId: number): Promise<(WorkoutExercise & { exercise: Exercise })[]> {
+    const workoutExercises = Array.from(this.workoutExercises.values()).filter(
+      we => we.workoutId === workoutId
+    );
+
+    return workoutExercises.map(we => {
+      const exercise = this.exercises.get(we.exerciseId);
+      if (!exercise) throw new Error(`Exercise not found: ${we.exerciseId}`);
+      return { ...we, exercise };
+    });
+  }
+
+  async addExerciseToWorkout(insertWorkoutExercise: InsertWorkoutExercise): Promise<WorkoutExercise> {
+    const id = this.currentIds.workoutExercises++;
+    const workoutExercise: WorkoutExercise = { ...insertWorkoutExercise, id };
+    this.workoutExercises.set(id, workoutExercise);
+    return workoutExercise;
+  }
+
+  // Food methods
+  async getAllFoods(): Promise<Food[]> {
+    return Array.from(this.foods.values());
+  }
+
+  async getFood(id: number): Promise<Food | undefined> {
+    return this.foods.get(id);
+  }
+
+  async createFood(insertFood: InsertFood): Promise<Food> {
+    const id = this.currentIds.foods++;
+    const food: Food = { ...insertFood, id };
+    this.foods.set(id, food);
+    return food;
+  }
+
+  async getFoodsByCategory(category: string): Promise<Food[]> {
+    return Array.from(this.foods.values()).filter(
+      food => food.category === category
+    );
+  }
+
+  // Meal Plan methods
+  async getMealPlan(userId: number, date: Date): Promise<MealPlan | undefined> {
+    return Array.from(this.mealPlans.values()).find(
+      mp => mp.userId === userId && mp.date.getTime() === date.getTime()
+    );
+  }
+
+  async createMealPlan(insertMealPlan: InsertMealPlan): Promise<MealPlan> {
+    const id = this.currentIds.mealPlans++;
+    const mealPlan: MealPlan = { ...insertMealPlan, id };
+    this.mealPlans.set(id, mealPlan);
+    return mealPlan;
+  }
+
+  async updateMealPlan(id: number, mealPlanData: Partial<MealPlan>): Promise<MealPlan | undefined> {
+    const mealPlan = this.mealPlans.get(id);
+    if (!mealPlan) return undefined;
     
-    if (enrollment) {
-      this.classEnrollments.delete(enrollment.id);
-      return true;
-    }
-    
-    return false;
+    const updatedMealPlan = { ...mealPlan, ...mealPlanData };
+    this.mealPlans.set(id, updatedMealPlan);
+    return updatedMealPlan;
+  }
+
+  // Workout Log methods
+  async getUserWorkoutLogs(userId: number): Promise<(WorkoutLog & { workout: Workout })[]> {
+    const workoutLogs = Array.from(this.workoutLogs.values()).filter(
+      wl => wl.userId === userId
+    );
+
+    return workoutLogs.map(wl => {
+      const workout = this.workouts.get(wl.workoutId);
+      if (!workout) throw new Error(`Workout not found: ${wl.workoutId}`);
+      return { ...wl, workout };
+    });
+  }
+
+  async createWorkoutLog(insertWorkoutLog: InsertWorkoutLog): Promise<WorkoutLog> {
+    const id = this.currentIds.workoutLogs++;
+    const workoutLog: WorkoutLog = { ...insertWorkoutLog, id };
+    this.workoutLogs.set(id, workoutLog);
+    return workoutLog;
+  }
+
+  async getWorkoutLogsInDateRange(userId: number, startDate: Date, endDate: Date): Promise<WorkoutLog[]> {
+    return Array.from(this.workoutLogs.values()).filter(
+      wl => wl.userId === userId && 
+        wl.date >= startDate && 
+        wl.date <= endDate
+    );
+  }
+
+  // Progress methods
+  async getUserProgressData(userId: number): Promise<ProgressData[]> {
+    return Array.from(this.progressData.values()).filter(
+      pd => pd.userId === userId
+    );
+  }
+
+  async createProgressData(insertProgressData: InsertProgressData): Promise<ProgressData> {
+    const id = this.currentIds.progressData++;
+    const progressData: ProgressData = { ...insertProgressData, id };
+    this.progressData.set(id, progressData);
+    return progressData;
+  }
+
+  async getProgressInDateRange(userId: number, startDate: Date, endDate: Date): Promise<ProgressData[]> {
+    return Array.from(this.progressData.values()).filter(
+      pd => pd.userId === userId && 
+        pd.date >= startDate && 
+        pd.date <= endDate
+    );
   }
 
   // Message methods
-  async getMessage(id: number): Promise<Message | undefined> {
-    return this.messages.get(id);
+  async getUserMessages(userId: number): Promise<(Message & { sender: User })[]> {
+    const messages = Array.from(this.messages.values()).filter(
+      m => m.receiverId === userId
+    );
+
+    return messages.map(m => {
+      const sender = this.users.get(m.senderId);
+      if (!sender) throw new Error(`Sender not found: ${m.senderId}`);
+      return { ...m, sender };
+    });
   }
-  
-  async getMessages(senderId?: number, receiverId?: number): Promise<Message[]> {
-    let messages = Array.from(this.messages.values());
-    
-    if (senderId) {
-      messages = messages.filter(m => m.senderId === senderId);
-    }
-    
-    if (receiverId) {
-      messages = messages.filter(m => m.receiverId === receiverId);
-    }
-    
-    return messages.sort((a, b) => a.sentAt.getTime() - b.sentAt.getTime());
-  }
-  
+
   async createMessage(insertMessage: InsertMessage): Promise<Message> {
     const id = this.currentIds.messages++;
-    const now = new Date();
-    const message: Message = { ...insertMessage, id, read: false, sentAt: now };
+    const message: Message = { 
+      ...insertMessage, 
+      id, 
+      timestamp: new Date(),
+      read: false 
+    };
     this.messages.set(id, message);
     return message;
   }
-  
-  async markMessageAsRead(id: number): Promise<boolean> {
-    const message = this.messages.get(id);
-    if (!message) return false;
+
+  async markMessageAsRead(messageId: number): Promise<Message | undefined> {
+    const message = this.messages.get(messageId);
+    if (!message) return undefined;
     
-    message.read = true;
-    this.messages.set(id, message);
-    return true;
+    const updatedMessage = { ...message, read: true };
+    this.messages.set(messageId, updatedMessage);
+    return updatedMessage;
   }
 
-  // Dashboard Data
-  async getUserDashboardData(userId: number): Promise<any> {
-    // Get user
-    const user = await this.getUser(userId);
-    if (!user) throw new Error("User not found");
-    
-    // Get today's progress
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-    
-    const todayProgress = (await this.getUserProgress(userId, today, tomorrow))[0] || {
-      caloriesConsumed: 0,
-      waterIntake: 0,
+  // Class Schedule methods
+  async getAllClassSchedules(): Promise<(ClassSchedule & { trainer: User })[]> {
+    const schedules = Array.from(this.classSchedules.values());
+
+    return schedules.map(schedule => {
+      const trainer = this.users.get(schedule.trainerId);
+      if (!trainer) throw new Error(`Trainer not found: ${schedule.trainerId}`);
+      return { ...schedule, trainer };
+    });
+  }
+
+  async getClassSchedule(id: number): Promise<ClassSchedule | undefined> {
+    return this.classSchedules.get(id);
+  }
+
+  async createClassSchedule(insertClassSchedule: InsertClassSchedule): Promise<ClassSchedule> {
+    const id = this.currentIds.classSchedules++;
+    const classSchedule: ClassSchedule = { ...insertClassSchedule, id };
+    this.classSchedules.set(id, classSchedule);
+    return classSchedule;
+  }
+
+  async getTrainerClassSchedules(trainerId: number): Promise<ClassSchedule[]> {
+    return Array.from(this.classSchedules.values()).filter(
+      cs => cs.trainerId === trainerId
+    );
+  }
+
+  // Class Enrollment methods
+  async enrollInClass(insertEnrollment: InsertClassEnrollment): Promise<ClassEnrollment> {
+    const id = this.currentIds.classEnrollments++;
+    const enrollment: ClassEnrollment = { 
+      ...insertEnrollment, 
+      id, 
+      enrollmentDate: new Date() 
     };
+    this.classEnrollments.set(id, enrollment);
     
-    // Get recent progress for streak calculation
-    const weekAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
-    const recentProgress = await this.getUserProgress(userId, weekAgo);
+    // Update current participants count
+    const classSchedule = this.classSchedules.get(enrollment.classId);
+    if (classSchedule) {
+      classSchedule.currentParticipants += 1;
+      this.classSchedules.set(classSchedule.id, classSchedule);
+    }
     
-    // Calculate workout streak
-    let streak = 0;
-    for (let i = 1; i <= 7; i++) {
-      const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
-      const progress = recentProgress.find(p => 
-        p.date.getFullYear() === date.getFullYear() && 
-        p.date.getMonth() === date.getMonth() && 
-        p.date.getDate() === date.getDate()
-      );
-      
-      if (progress && progress.workoutCompleted) {
-        streak++;
-      } else {
-        break;
+    return enrollment;
+  }
+
+  async getUserEnrollments(userId: number): Promise<(ClassEnrollment & { class: ClassSchedule })[]> {
+    const enrollments = Array.from(this.classEnrollments.values()).filter(
+      e => e.userId === userId
+    );
+
+    return enrollments.map(enrollment => {
+      const classSchedule = this.classSchedules.get(enrollment.classId);
+      if (!classSchedule) throw new Error(`Class not found: ${enrollment.classId}`);
+      return { ...enrollment, class: classSchedule };
+    });
+  }
+
+  // Leaderboard method
+  async getLeaderboard(): Promise<{ user: User; points: number }[]> {
+    // Calculate points based on workout completions in the last 30 days
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const userWorkouts = new Map<number, WorkoutLog[]>();
+    
+    // Group workout logs by user
+    Array.from(this.workoutLogs.values()).forEach(log => {
+      if (log.date >= thirtyDaysAgo && log.completed) {
+        if (!userWorkouts.has(log.userId)) {
+          userWorkouts.set(log.userId, []);
+        }
+        userWorkouts.get(log.userId)?.push(log);
       }
-    }
+    });
     
-    // Get upcoming classes
-    const userEnrollments = await this.getClassEnrollments(undefined, userId);
-    const enrolledClassIds = userEnrollments.map(e => e.classId);
+    // Calculate points (each workout = 35 points, plus bonus for duration)
+    const userPoints: { user: User; points: number }[] = [];
     
-    let upcomingClasses = (await this.getClasses(undefined, now))
-      .filter(c => c.startTime >= now)
-      .sort((a, b) => a.startTime.getTime() - b.startTime.getTime())
-      .slice(0, 3);
+    userWorkouts.forEach((logs, userId) => {
+      const user = this.users.get(userId);
+      if (user) {
+        const totalWorkouts = logs.length;
+        const totalDuration = logs.reduce((sum, log) => sum + log.duration, 0);
+        
+        // Points formula: 35 points per workout + 1 point per 5 minutes of workout
+        const workoutPoints = totalWorkouts * 35;
+        const durationPoints = Math.floor(totalDuration / 5);
+        const totalPoints = workoutPoints + durationPoints;
+        
+        userPoints.push({ user, points: totalPoints });
+      }
+    });
     
-    // Add enrollment status
-    upcomingClasses = await Promise.all(upcomingClasses.map(async (c) => {
-      const trainer = await this.getUser(c.trainerId);
-      return {
-        ...c,
-        enrolled: enrolledClassIds.includes(c.id),
-        trainerName: trainer ? trainer.fullName : 'Unknown'
-      };
-    }));
-    
-    // Get next session
-    const nextClass = upcomingClasses.find(c => enrolledClassIds.includes(c.id));
-    
-    // Calculate time until next session
-    let nextSession = null;
-    if (nextClass) {
-      const diffMs = nextClass.startTime.getTime() - now.getTime();
-      const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
-      const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-      nextSession = {
-        timeUntil: `${diffHrs}h ${diffMins}m`,
-        className: nextClass.name,
-        trainerName: nextClass.trainerName,
-        time: nextClass.startTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-      };
-    }
-    
-    // Get weekly activity data
-    const weeklyData = [];
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
-      const dayProgress = recentProgress.find(p => 
-        p.date.getFullYear() === date.getFullYear() && 
-        p.date.getMonth() === date.getMonth() && 
-        p.date.getDate() === date.getDate()
-      );
-      
-      weeklyData.push({
-        day: days[date.getDay()],
-        workoutDuration: dayProgress?.workoutDuration || 0,
-        caloriesBurned: dayProgress?.caloriesBurned || 0
+    // Add empty points for users without workouts (for demo purpose)
+    if (userPoints.length < 3) {
+      Array.from(this.users.values()).forEach(user => {
+        if (!userWorkouts.has(user.id) && !user.isTrainer) {
+          userPoints.push({ user, points: 0 });
+        }
       });
     }
     
-    // Get today's workout
-    const workouts = await this.getWorkouts();
-    const todayWorkout = workouts[0]; // Just using the first workout for demo purposes
-    
-    // Get meal plan
-    const meals = await this.getMeals();
-    const mealPlan = {
-      breakfast: meals.find(m => m.type === 'breakfast'),
-      lunch: meals.find(m => m.type === 'lunch'),
-      dinner: meals.find(m => m.type === 'dinner')
-    };
-    
-    return {
-      user,
-      todayStats: {
-        caloriesConsumed: todayProgress.caloriesConsumed || 0,
-        waterIntake: todayProgress.waterIntake || 0,
-        workoutStreak: streak,
-        nextSession
-      },
-      weeklyActivity: weeklyData,
-      nutritionBreakdown: {
-        protein: { current: 78, goal: 120 },
-        carbs: { current: 105, goal: 250 },
-        fats: { current: 48, goal: 60 },
-        calories: { current: todayProgress.caloriesConsumed || 0, goal: 1800 }
-      },
-      todayWorkout,
-      mealPlan,
-      upcomingClasses
-    };
-  }
-  
-  async getLeaderboard(): Promise<any[]> {
-    const users = await this.getUsers();
-    const leaderboard = [];
-    
-    for (const user of users) {
-      if (user.role === 'user') {
-        // Get user progress
-        const recentProgress = await this.getUserProgress(user.id);
-        
-        // Calculate metrics
-        const workouts = recentProgress.filter(p => p.workoutCompleted).length;
-        const minutes = recentProgress.reduce((sum, p) => sum + (p.workoutDuration || 0), 0);
-        const points = workouts * 50 + minutes;
-        
-        leaderboard.push({
-          id: user.id,
-          name: user.fullName,
-          city: user.city || 'Unknown',
-          workouts,
-          minutes,
-          points
-        });
-      }
-    }
-    
-    // Sort by points
-    return leaderboard.sort((a, b) => b.points - a.points);
+    // Sort by points (descending)
+    return userPoints.sort((a, b) => b.points - a.points);
   }
 }
 

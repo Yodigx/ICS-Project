@@ -1,160 +1,106 @@
-import React, { useState } from "react";
-import { Link, useLocation } from "wouter";
-import { cn } from "@/lib/utils";
-import {
-  LayoutDashboard,
-  Dumbbell,
-  UtensilsCrossed,
-  Trophy,
-  User,
-  Menu,
-  X,
-  Calendar,
-  MessageSquare,
-  Settings,
-  LogOut
-} from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useAuth } from "@/contexts/AuthContext";
-import { apiRequest } from "@/lib/queryClient";
+import { useState } from 'react';
+import { Link, useLocation } from 'wouter';
+import { useAuth } from '@/hooks/useAuth';
 
-export function MobileNav() {
-  const [location] = useLocation();
+export default function MobileNav() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
+  const [location] = useLocation();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  const closeMenu = () => {
-    setIsMenuOpen(false);
+  const isActive = (path: string) => {
+    return location === path;
   };
 
-  const handleLogout = async () => {
-    try {
-      await apiRequest("POST", "/api/auth/logout", {});
-      logout();
-      closeMenu();
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
+  const linkClass = (path: string) => {
+    return `block px-4 py-2 text-sm rounded-lg ${
+      isActive(path) 
+        ? 'bg-gray-800 text-white' 
+        : 'hover:bg-gray-800 text-gray-300 hover:text-white'
+    }`;
   };
 
-  const navItems = [
-    { href: "/dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
-    { href: "/workouts", label: "Workouts", icon: <Dumbbell className="w-5 h-5" /> },
-    { href: "/nutrition", label: "Nutrition", icon: <UtensilsCrossed className="w-5 h-5" /> },
-    { href: "/schedule", label: "Schedule", icon: <Calendar className="w-5 h-5" /> },
-    { href: "/achievements", label: "Achievements", icon: <Trophy className="w-5 h-5" /> },
-    { href: "/messages", label: "Messages", icon: <MessageSquare className="w-5 h-5" /> },
-    { href: "/settings", label: "Settings", icon: <Settings className="w-5 h-5" /> },
-  ];
-
-  const bottomNavItems = [
-    { href: "/dashboard", label: "Dashboard", icon: <LayoutDashboard className="text-xl" /> },
-    { href: "/workouts", label: "Workouts", icon: <Dumbbell className="text-xl" /> },
-    { href: "/nutrition", label: "Nutrition", icon: <UtensilsCrossed className="text-xl" /> },
-    { href: "/achievements", label: "Progress", icon: <Trophy className="text-xl" /> },
-    { href: "/settings", label: "Profile", icon: <User className="text-xl" /> }
-  ];
+  const iconClass = (path: string) => {
+    return `mr-3 ${isActive(path) ? 'text-primary' : 'text-gray-400'}`;
+  };
 
   return (
     <>
-      {/* Mobile Header */}
-      <header className="lg:hidden bg-white border-b border-gray-200 p-4 flex justify-between items-center">
-        <div className="flex items-center">
-          <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center text-white">
-            <span className="font-bold text-lg">FL</span>
-          </div>
-          <h1 className="ml-2 text-xl font-bold text-primary">FitLife</h1>
-        </div>
-        <button
-          onClick={toggleMenu}
-          className="text-gray-500 hover:text-primary"
-        >
-          <Menu className="h-6 w-6" />
+      <div className="lg:hidden bg-dark text-white w-full py-4 px-6 flex items-center justify-between z-40">
+        <h1 className="text-xl font-bold text-primary">FitLife</h1>
+        <button onClick={toggleMenu} className="text-white">
+          <i className="fas fa-bars text-xl"></i>
         </button>
-      </header>
-
-      {/* Mobile Sidebar Menu */}
-      <div className={cn(
-        "fixed inset-0 bg-gray-900/50 z-50 lg:hidden transition-opacity",
-        isMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-      )}>
-        <div 
-          className={cn(
-            "bg-white h-full w-64 p-4 transform transition-transform",
-            isMenuOpen ? "translate-x-0" : "-translate-x-full"
-          )}
-        >
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center">
-              <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center text-white">
-                <span className="font-bold text-lg">FL</span>
-              </div>
-              <h1 className="ml-2 text-xl font-bold text-primary">FitLife</h1>
-            </div>
-            <button onClick={closeMenu} className="text-gray-500 hover:text-primary">
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-          
-          <div className="space-y-4">
-            {navItems.map((item) => (
-              <Link key={item.href} href={item.href}>
-                <a
-                  className={cn(
-                    "flex items-center p-2 rounded-lg text-gray-700 hover:bg-gray-100",
-                    location === item.href && "text-primary bg-blue-50"
-                  )}
-                  onClick={closeMenu}
-                >
-                  <span className="w-6">{item.icon}</span>
-                  <span className="ml-3">{item.label}</span>
-                </a>
-              </Link>
-            ))}
-            
-            <button 
-              onClick={handleLogout}
-              className="w-full flex items-center p-2 rounded-lg text-gray-700 hover:bg-gray-100"
-            >
-              <span className="w-6"><LogOut className="w-5 h-5" /></span>
-              <span className="ml-3">Logout</span>
-            </button>
-          </div>
-          
-          {user && (
-            <div className="absolute bottom-4 left-4 right-4">
-              <div className="flex items-center p-2 rounded-lg bg-gray-100">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={`https://avatar.vercel.sh/${user.username}`} alt={user.fullName} />
-                  <AvatarFallback>{user.fullName.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-800">{user.fullName}</p>
-                  <p className="text-xs text-gray-500">{user.role === "trainer" ? "Trainer" : "Member"}</p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
       </div>
 
-      {/* Mobile Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 lg:hidden bg-white border-t border-gray-200 flex justify-around py-3 z-10">
-        {bottomNavItems.map((item) => (
-          <Link key={item.href} href={item.href}>
-            <a className={cn(
-              "flex flex-col items-center",
-              location === item.href ? "text-primary" : "text-gray-500"
-            )}>
-              {item.icon}
-              <span className="text-xs mt-1">{item.label}</span>
+      {isMenuOpen && (
+        <div className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40" onClick={toggleMenu} />
+      )}
+
+      <div className={`lg:hidden fixed top-14 inset-x-0 bg-dark text-white z-50 transform ${isMenuOpen ? 'translate-y-0' : '-translate-y-full'} transition-transform duration-200 ease-in-out`}>
+        <nav className="px-4 py-2 space-y-1">
+          <Link href="/">
+            <a className={linkClass("/")} onClick={() => setIsMenuOpen(false)}>
+              <i className={`fas fa-home ${iconClass("/")}`}></i>
+              <span>Dashboard</span>
             </a>
           </Link>
-        ))}
+          <Link href="/diet-planner">
+            <a className={linkClass("/diet-planner")} onClick={() => setIsMenuOpen(false)}>
+              <i className={`fas fa-utensils ${iconClass("/diet-planner")}`}></i>
+              <span>Diet Planner</span>
+            </a>
+          </Link>
+          <Link href="/workouts">
+            <a className={linkClass("/workouts")} onClick={() => setIsMenuOpen(false)}>
+              <i className={`fas fa-dumbbell ${iconClass("/workouts")}`}></i>
+              <span>Workouts</span>
+            </a>
+          </Link>
+          <Link href="/progress">
+            <a className={linkClass("/progress")} onClick={() => setIsMenuOpen(false)}>
+              <i className={`fas fa-chart-line ${iconClass("/progress")}`}></i>
+              <span>Progress</span>
+            </a>
+          </Link>
+          <Link href="/timer">
+            <a className={linkClass("/timer")} onClick={() => setIsMenuOpen(false)}>
+              <i className={`fas fa-stopwatch ${iconClass("/timer")}`}></i>
+              <span>Timer</span>
+            </a>
+          </Link>
+          <Link href="/leaderboard">
+            <a className={linkClass("/leaderboard")} onClick={() => setIsMenuOpen(false)}>
+              <i className={`fas fa-trophy ${iconClass("/leaderboard")}`}></i>
+              <span>Leaderboard</span>
+            </a>
+          </Link>
+          <Link href="/schedule">
+            <a className={linkClass("/schedule")} onClick={() => setIsMenuOpen(false)}>
+              <i className={`fas fa-calendar-alt ${iconClass("/schedule")}`}></i>
+              <span>Schedule</span>
+            </a>
+          </Link>
+          <Link href="/messages">
+            <a className={linkClass("/messages")} onClick={() => setIsMenuOpen(false)}>
+              <i className={`fas fa-comments ${iconClass("/messages")}`}></i>
+              <span>Messages</span>
+            </a>
+          </Link>
+          <button 
+            onClick={() => {
+              logout();
+              setIsMenuOpen(false);
+            }}
+            className="block w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-gray-800 text-gray-300 hover:text-white"
+          >
+            <i className="fas fa-sign-out-alt mr-3 text-gray-400"></i>
+            <span>Logout</span>
+          </button>
+        </nav>
       </div>
     </>
   );

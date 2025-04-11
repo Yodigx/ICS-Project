@@ -1,146 +1,206 @@
-import { pgTable, text, serial, integer, boolean, timestamp, json, real } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, date } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// User schema
+// User Model
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
   email: text("email").notNull().unique(),
-  fullName: text("full_name").notNull(),
-  city: text("city"),
-  role: text("role").notNull().default("user"), // user or trainer
-  createdAt: timestamp("created_at").defaultNow(),
+  profileImage: text("profile_image"),
+  weight: integer("weight"),
+  height: integer("height"),
+  age: integer("age"),
+  gender: text("gender"),
+  goal: text("goal"), // weight loss, muscle gain, etc.
+  isTrainer: boolean("is_trainer").default(false),
+  plan: text("plan").default("Basic")
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
-  createdAt: true,
+  id: true
 });
 
-// Workout schema
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type User = typeof users.$inferSelect;
+
+// Workout Model
 export const workouts = pgTable("workouts", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  description: text("description"),
-  type: text("type").notNull(),
-  equipmentNeeded: text("equipment_needed").array(),
-  exercises: json("exercises").notNull(), // Array of exercise objects
-  createdAt: timestamp("created_at").defaultNow(),
+  description: text("description").notNull(),
+  duration: integer("duration").notNull(), // in minutes
+  difficulty: text("difficulty").notNull(),
+  equipmentRequired: text("equipment_required").array(),
+  targetMuscleGroups: text("target_muscle_groups").array(),
+  imageUrl: text("image_url")
 });
 
 export const insertWorkoutSchema = createInsertSchema(workouts).omit({
-  id: true,
-  createdAt: true,
+  id: true
 });
-
-// Meal schema
-export const meals = pgTable("meals", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  description: text("description"),
-  type: text("type").notNull(), // breakfast, lunch, dinner, snack
-  calories: integer("calories").notNull(),
-  protein: real("protein").notNull(),
-  carbs: real("carbs").notNull(),
-  fats: real("fats").notNull(),
-  image: text("image"),
-  ingredients: json("ingredients").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-export const insertMealSchema = createInsertSchema(meals).omit({
-  id: true,
-  createdAt: true,
-});
-
-// User Progress schema
-export const userProgress = pgTable("user_progress", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  date: timestamp("date").notNull().defaultNow(),
-  workoutCompleted: boolean("workout_completed"),
-  workoutId: integer("workout_id"),
-  workoutDuration: integer("workout_duration"), // in minutes
-  caloriesBurned: integer("calories_burned"),
-  caloriesConsumed: integer("calories_consumed"),
-  waterIntake: real("water_intake"), // in liters
-  weight: real("weight"), // in kg
-  notes: text("notes"),
-});
-
-export const insertUserProgressSchema = createInsertSchema(userProgress).omit({
-  id: true,
-});
-
-// Classes schema
-export const classes = pgTable("classes", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  description: text("description"),
-  trainerId: integer("trainer_id").notNull(),
-  startTime: timestamp("start_time").notNull(),
-  duration: integer("duration").notNull(), // in minutes
-  maxParticipants: integer("max_participants"),
-  currentParticipants: integer("current_participants").default(0),
-  type: text("type").notNull(), // yoga, hiit, strength, etc.
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-export const insertClassSchema = createInsertSchema(classes).omit({
-  id: true,
-  createdAt: true,
-  currentParticipants: true,
-});
-
-// Class Enrollments schema
-export const classEnrollments = pgTable("class_enrollments", {
-  id: serial("id").primaryKey(),
-  classId: integer("class_id").notNull(),
-  userId: integer("user_id").notNull(),
-  enrolledAt: timestamp("enrolled_at").defaultNow(),
-});
-
-export const insertClassEnrollmentSchema = createInsertSchema(classEnrollments).omit({
-  id: true,
-  enrolledAt: true,
-});
-
-// Messages schema
-export const messages = pgTable("messages", {
-  id: serial("id").primaryKey(),
-  senderId: integer("sender_id").notNull(),
-  receiverId: integer("receiver_id").notNull(),
-  content: text("content").notNull(),
-  read: boolean("read").default(false),
-  sentAt: timestamp("sent_at").defaultNow(),
-});
-
-export const insertMessageSchema = createInsertSchema(messages).omit({
-  id: true,
-  read: true,
-  sentAt: true,
-});
-
-// Export types
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
 
 export type InsertWorkout = z.infer<typeof insertWorkoutSchema>;
 export type Workout = typeof workouts.$inferSelect;
 
-export type InsertMeal = z.infer<typeof insertMealSchema>;
-export type Meal = typeof meals.$inferSelect;
+// Exercise Model
+export const exercises = pgTable("exercises", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  muscleGroup: text("muscle_group").notNull(),
+  equipmentRequired: text("equipment_required"),
+  difficultyLevel: text("difficulty_level").notNull(),
+  imageUrl: text("image_url"),
+  videoUrl: text("video_url")
+});
 
-export type InsertUserProgress = z.infer<typeof insertUserProgressSchema>;
-export type UserProgress = typeof userProgress.$inferSelect;
+export const insertExerciseSchema = createInsertSchema(exercises).omit({
+  id: true
+});
 
-export type InsertClass = z.infer<typeof insertClassSchema>;
-export type Class = typeof classes.$inferSelect;
+export type InsertExercise = z.infer<typeof insertExerciseSchema>;
+export type Exercise = typeof exercises.$inferSelect;
 
-export type InsertClassEnrollment = z.infer<typeof insertClassEnrollmentSchema>;
-export type ClassEnrollment = typeof classEnrollments.$inferSelect;
+// Exercise in Workout (Junction)
+export const workoutExercises = pgTable("workout_exercises", {
+  id: serial("id").primaryKey(),
+  workoutId: integer("workout_id").notNull(),
+  exerciseId: integer("exercise_id").notNull(),
+  sets: integer("sets").notNull(),
+  reps: integer("reps").notNull(),
+  restTime: integer("rest_time") // in seconds
+});
+
+export const insertWorkoutExerciseSchema = createInsertSchema(workoutExercises).omit({
+  id: true
+});
+
+export type InsertWorkoutExercise = z.infer<typeof insertWorkoutExerciseSchema>;
+export type WorkoutExercise = typeof workoutExercises.$inferSelect;
+
+// Food Model
+export const foods = pgTable("foods", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  calories: integer("calories").notNull(),
+  protein: integer("protein").notNull(), // in grams
+  carbs: integer("carbs").notNull(), // in grams
+  fat: integer("fat").notNull(), // in grams
+  fiber: integer("fiber"), // in grams
+  category: text("category").notNull(), // breakfast, lunch, dinner, snack
+  imageUrl: text("image_url")
+});
+
+export const insertFoodSchema = createInsertSchema(foods).omit({
+  id: true
+});
+
+export type InsertFood = z.infer<typeof insertFoodSchema>;
+export type Food = typeof foods.$inferSelect;
+
+// Meal Plan Model
+export const mealPlans = pgTable("meal_plans", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  date: date("date").notNull(),
+  meals: jsonb("meals").notNull() // array of food items with time
+});
+
+export const insertMealPlanSchema = createInsertSchema(mealPlans).omit({
+  id: true
+});
+
+export type InsertMealPlan = z.infer<typeof insertMealPlanSchema>;
+export type MealPlan = typeof mealPlans.$inferSelect;
+
+// Workout Log Model
+export const workoutLogs = pgTable("workout_logs", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  workoutId: integer("workout_id").notNull(),
+  date: date("date").notNull(),
+  duration: integer("duration").notNull(), // in minutes
+  caloriesBurned: integer("calories_burned"),
+  completed: boolean("completed").default(true)
+});
+
+export const insertWorkoutLogSchema = createInsertSchema(workoutLogs).omit({
+  id: true
+});
+
+export type InsertWorkoutLog = z.infer<typeof insertWorkoutLogSchema>;
+export type WorkoutLog = typeof workoutLogs.$inferSelect;
+
+// Progress Model
+export const progressData = pgTable("progress_data", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  date: date("date").notNull(),
+  weight: integer("weight"),
+  bodyFat: integer("body_fat"),
+  notes: text("notes")
+});
+
+export const insertProgressDataSchema = createInsertSchema(progressData).omit({
+  id: true
+});
+
+export type InsertProgressData = z.infer<typeof insertProgressDataSchema>;
+export type ProgressData = typeof progressData.$inferSelect;
+
+// Message Model
+export const messages = pgTable("messages", {
+  id: serial("id").primaryKey(),
+  senderId: integer("sender_id").notNull(),
+  receiverId: integer("receiver_id").notNull(),
+  message: text("message").notNull(),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  read: boolean("read").default(false)
+});
+
+export const insertMessageSchema = createInsertSchema(messages).omit({
+  id: true,
+  timestamp: true
+});
 
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;
+
+// Class Schedule Model
+export const classSchedules = pgTable("class_schedules", {
+  id: serial("id").primaryKey(),
+  trainerId: integer("trainer_id").notNull(),
+  className: text("class_name").notNull(),
+  description: text("description"),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time").notNull(),
+  maxParticipants: integer("max_participants").notNull(),
+  currentParticipants: integer("current_participants").default(0)
+});
+
+export const insertClassScheduleSchema = createInsertSchema(classSchedules).omit({
+  id: true
+});
+
+export type InsertClassSchedule = z.infer<typeof insertClassScheduleSchema>;
+export type ClassSchedule = typeof classSchedules.$inferSelect;
+
+// Class Enrollment Model
+export const classEnrollments = pgTable("class_enrollments", {
+  id: serial("id").primaryKey(),
+  classId: integer("class_id").notNull(),
+  userId: integer("user_id").notNull(),
+  enrollmentDate: timestamp("enrollment_date").defaultNow().notNull()
+});
+
+export const insertClassEnrollmentSchema = createInsertSchema(classEnrollments).omit({
+  id: true,
+  enrollmentDate: true
+});
+
+export type InsertClassEnrollment = z.infer<typeof insertClassEnrollmentSchema>;
+export type ClassEnrollment = typeof classEnrollments.$inferSelect;
