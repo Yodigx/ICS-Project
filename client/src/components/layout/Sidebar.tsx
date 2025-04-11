@@ -1,6 +1,5 @@
-import { useLocation } from 'wouter';
+import { useLocation, Link } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
@@ -29,42 +28,60 @@ export default function Sidebar() {
       </div>
       
       <nav className="flex-1 px-2 py-4 space-y-2 overflow-y-auto">
-        <a href="/" className={linkClass("/")}>
-          <i className={`fas fa-home ${iconClass("/")}`}></i>
-          <span>Dashboard</span>
-        </a>
-        <a href="/diet-planner" className={linkClass("/diet-planner")}>
-          <i className={`fas fa-utensils ${iconClass("/diet-planner")}`}></i>
-          <span>Diet Planner</span>
-        </a>
-        <a href="/workouts" className={linkClass("/workouts")}>
-          <i className={`fas fa-dumbbell ${iconClass("/workouts")}`}></i>
-          <span>Workouts</span>
-        </a>
-        <a href="/progress" className={linkClass("/progress")}>
-          <i className={`fas fa-chart-line ${iconClass("/progress")}`}></i>
-          <span>Progress</span>
-        </a>
-        <a href="/timer" className={linkClass("/timer")}>
-          <i className={`fas fa-stopwatch ${iconClass("/timer")}`}></i>
-          <span>Timer</span>
-        </a>
-        <a href="/leaderboard" className={linkClass("/leaderboard")}>
-          <i className={`fas fa-trophy ${iconClass("/leaderboard")}`}></i>
-          <span>Leaderboard</span>
-        </a>
-        <a href="/schedule" className={linkClass("/schedule")}>
-          <i className={`fas fa-calendar-alt ${iconClass("/schedule")}`}></i>
-          <span>Schedule</span>
-        </a>
-        <a href="/messages" className={linkClass("/messages")}>
-          <i className={`fas fa-comments ${iconClass("/messages")}`}></i>
-          <span>Messages</span>
-        </a>
-        <a href="/profile" className={linkClass("/profile")}>
-          <i className={`fas fa-user ${iconClass("/profile")}`}></i>
-          <span>Profile</span>
-        </a>
+        <Link href="/">
+          <a className={linkClass("/")}>
+            <i className={`fas fa-home ${iconClass("/")}`}></i>
+            <span>Dashboard</span>
+          </a>
+        </Link>
+        <Link href="/diet-planner">
+          <a className={linkClass("/diet-planner")}>
+            <i className={`fas fa-utensils ${iconClass("/diet-planner")}`}></i>
+            <span>Diet Planner</span>
+          </a>
+        </Link>
+        <Link href="/workouts">
+          <a className={linkClass("/workouts")}>
+            <i className={`fas fa-dumbbell ${iconClass("/workouts")}`}></i>
+            <span>Workouts</span>
+          </a>
+        </Link>
+        <Link href="/progress">
+          <a className={linkClass("/progress")}>
+            <i className={`fas fa-chart-line ${iconClass("/progress")}`}></i>
+            <span>Progress</span>
+          </a>
+        </Link>
+        <Link href="/timer">
+          <a className={linkClass("/timer")}>
+            <i className={`fas fa-stopwatch ${iconClass("/timer")}`}></i>
+            <span>Timer</span>
+          </a>
+        </Link>
+        <Link href="/leaderboard">
+          <a className={linkClass("/leaderboard")}>
+            <i className={`fas fa-trophy ${iconClass("/leaderboard")}`}></i>
+            <span>Leaderboard</span>
+          </a>
+        </Link>
+        <Link href="/schedule">
+          <a className={linkClass("/schedule")}>
+            <i className={`fas fa-calendar-alt ${iconClass("/schedule")}`}></i>
+            <span>Schedule</span>
+          </a>
+        </Link>
+        <Link href="/messages">
+          <a className={linkClass("/messages")}>
+            <i className={`fas fa-comments ${iconClass("/messages")}`}></i>
+            <span>Messages</span>
+          </a>
+        </Link>
+        <Link href="/profile">
+          <a className={linkClass("/profile")}>
+            <i className={`fas fa-user ${iconClass("/profile")}`}></i>
+            <span>Profile</span>
+          </a>
+        </Link>
       </nav>
 
       {user && (
