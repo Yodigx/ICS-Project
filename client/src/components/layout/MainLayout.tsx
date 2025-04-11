@@ -19,7 +19,7 @@ export default function MainLayout({ children, title }: MainLayoutProps) {
   // Check if user is authenticated
   useEffect(() => {
     if (!isAuthenticated) {
-      setLocation('/register');
+      setLocation('/auth');
     } else {
       setIsLoading(false);
     }

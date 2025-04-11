@@ -12,8 +12,7 @@ import Leaderboard from "@/pages/Leaderboard";
 import Schedule from "@/pages/Schedule";
 import Messages from "@/pages/Messages";
 import Profile from "@/pages/Profile";
-import Login from "@/pages/Login";
-import Register from "@/pages/Register";
+import AuthPage from "@/pages/auth-page";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/lib/protected-route";
 
@@ -65,8 +64,7 @@ function Router() {
           <Profile />
         </ProtectedRoute>
       </Route>
-      <Route path="/login" component={Login} />
-      <Route path="/register" component={Register} />
+      <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
   );

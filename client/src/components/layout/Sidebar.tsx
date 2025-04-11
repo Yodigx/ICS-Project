@@ -28,59 +28,41 @@ export default function Sidebar() {
       </div>
       
       <nav className="flex-1 px-2 py-4 space-y-2 overflow-y-auto">
-        <Link href="/">
-          <a className={linkClass("/")}>
-            <i className={`fas fa-home ${iconClass("/")}`}></i>
-            <span>Dashboard</span>
-          </a>
+        <Link href="/" className={linkClass("/")}>
+          <i className={`fas fa-home ${iconClass("/")}`}></i>
+          <span>Dashboard</span>
         </Link>
-        <Link href="/diet-planner">
-          <a className={linkClass("/diet-planner")}>
-            <i className={`fas fa-utensils ${iconClass("/diet-planner")}`}></i>
-            <span>Diet Planner</span>
-          </a>
+        <Link href="/diet-planner" className={linkClass("/diet-planner")}>
+          <i className={`fas fa-utensils ${iconClass("/diet-planner")}`}></i>
+          <span>Diet Planner</span>
         </Link>
-        <Link href="/workouts">
-          <a className={linkClass("/workouts")}>
-            <i className={`fas fa-dumbbell ${iconClass("/workouts")}`}></i>
-            <span>Workouts</span>
-          </a>
+        <Link href="/workouts" className={linkClass("/workouts")}>
+          <i className={`fas fa-dumbbell ${iconClass("/workouts")}`}></i>
+          <span>Workouts</span>
         </Link>
-        <Link href="/progress">
-          <a className={linkClass("/progress")}>
-            <i className={`fas fa-chart-line ${iconClass("/progress")}`}></i>
-            <span>Progress</span>
-          </a>
+        <Link href="/progress" className={linkClass("/progress")}>
+          <i className={`fas fa-chart-line ${iconClass("/progress")}`}></i>
+          <span>Progress</span>
         </Link>
-        <Link href="/timer">
-          <a className={linkClass("/timer")}>
-            <i className={`fas fa-stopwatch ${iconClass("/timer")}`}></i>
-            <span>Timer</span>
-          </a>
+        <Link href="/timer" className={linkClass("/timer")}>
+          <i className={`fas fa-stopwatch ${iconClass("/timer")}`}></i>
+          <span>Timer</span>
         </Link>
-        <Link href="/leaderboard">
-          <a className={linkClass("/leaderboard")}>
-            <i className={`fas fa-trophy ${iconClass("/leaderboard")}`}></i>
-            <span>Leaderboard</span>
-          </a>
+        <Link href="/leaderboard" className={linkClass("/leaderboard")}>
+          <i className={`fas fa-trophy ${iconClass("/leaderboard")}`}></i>
+          <span>Leaderboard</span>
         </Link>
-        <Link href="/schedule">
-          <a className={linkClass("/schedule")}>
-            <i className={`fas fa-calendar-alt ${iconClass("/schedule")}`}></i>
-            <span>Schedule</span>
-          </a>
+        <Link href="/schedule" className={linkClass("/schedule")}>
+          <i className={`fas fa-calendar-alt ${iconClass("/schedule")}`}></i>
+          <span>Schedule</span>
         </Link>
-        <Link href="/messages">
-          <a className={linkClass("/messages")}>
-            <i className={`fas fa-comments ${iconClass("/messages")}`}></i>
-            <span>Messages</span>
-          </a>
+        <Link href="/messages" className={linkClass("/messages")}>
+          <i className={`fas fa-comments ${iconClass("/messages")}`}></i>
+          <span>Messages</span>
         </Link>
-        <Link href="/profile">
-          <a className={linkClass("/profile")}>
-            <i className={`fas fa-user ${iconClass("/profile")}`}></i>
-            <span>Profile</span>
-          </a>
+        <Link href="/profile" className={linkClass("/profile")}>
+          <i className={`fas fa-user ${iconClass("/profile")}`}></i>
+          <span>Profile</span>
         </Link>
       </nav>
 

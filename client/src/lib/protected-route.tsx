@@ -17,7 +17,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     const checkAuth = async () => {
       if (!isAuthenticated && !user) {
         // Redirect to the authentication page that exists in our routes
-        setLocation("/register");
+        setLocation("/auth");
       }
       setIsChecking(false);
     };

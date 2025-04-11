@@ -98,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       title: "Logged out",
       description: "You have been successfully logged out",
     });
-    setLocation('/register');
+    setLocation('/auth');
   };
 
   return (
