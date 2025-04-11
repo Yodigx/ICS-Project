@@ -14,18 +14,51 @@ import Messages from "@/pages/Messages";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import { AuthProvider } from "@/hooks/useAuth";
+import { ProtectedRoute } from "@/lib/protected-route";
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/diet-planner" component={DietPlanner} />
-      <Route path="/workouts" component={Workouts} />
-      <Route path="/progress" component={Progress} />
-      <Route path="/timer" component={Timer} />
-      <Route path="/leaderboard" component={Leaderboard} />
-      <Route path="/schedule" component={Schedule} />
-      <Route path="/messages" component={Messages} />
+      <Route path="/">
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/diet-planner">
+        <ProtectedRoute>
+          <DietPlanner />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/workouts">
+        <ProtectedRoute>
+          <Workouts />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/progress">
+        <ProtectedRoute>
+          <Progress />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/timer">
+        <ProtectedRoute>
+          <Timer />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/leaderboard">
+        <ProtectedRoute>
+          <Leaderboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/schedule">
+        <ProtectedRoute>
+          <Schedule />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/messages">
+        <ProtectedRoute>
+          <Messages />
+        </ProtectedRoute>
+      </Route>
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route component={NotFound} />
