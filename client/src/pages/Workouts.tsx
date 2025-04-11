@@ -7,16 +7,19 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Workout, Exercise } from "@/types";
+import CreateWorkoutForm from "@/components/workouts/CreateWorkoutForm";
 
 export default function Workouts() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [selectedEquipment, setSelectedEquipment] = useState<string[]>([]);
   const [selectedMuscleGroups, setSelectedMuscleGroups] = useState<string[]>([]);
+  const [showCreateWorkoutForm, setShowCreateWorkoutForm] = useState<boolean>(false);
   
   const { data: workouts, isLoading: isLoadingWorkouts } = useQuery({
     queryKey: ['/api/workouts'],
@@ -27,8 +30,14 @@ export default function Workouts() {
     queryKey: ['/api/exercises'],
     enabled: !!user,
   });
+  
+  // Get user's custom workouts
+  const { data: userWorkouts, isLoading: isLoadingUserWorkouts } = useQuery({
+    queryKey: ['/api/workouts/user', user?.id],
+    enabled: !!user?.id,
+  });
 
-  const isLoading = isLoadingWorkouts || isLoadingExercises;
+  const isLoading = isLoadingWorkouts || isLoadingExercises || isLoadingUserWorkouts;
 
   const toggleEquipment = (equipment: string) => {
     setSelectedEquipment(prev => 
@@ -240,20 +249,64 @@ export default function Workouts() {
         </TabsContent>
         
         <TabsContent value="my-workouts">
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Saved Workouts</CardTitle>
-              <CardDescription>Workouts you've saved or created</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center p-8">
-                <p className="text-gray-500 mb-2">You don't have any saved workouts yet.</p>
-                <Button className="mt-2">
-                  Create Custom Workout
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Your Saved Workouts</CardTitle>
+                    <CardDescription>Workouts you've saved or created</CardDescription>
+                  </div>
+                  <Button onClick={() => setShowCreateWorkoutForm(true)}>
+                    Create Custom Workout
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {isLoadingUserWorkouts ? (
+                  Array(3).fill(0).map((_, i) => (
+                    <Skeleton key={i} className="h-20 w-full mb-3" />
+                  ))
+                ) : userWorkouts?.length > 0 ? (
+                  <div className="space-y-3">
+                    {userWorkouts.map((workout: Workout) => (
+                      <div key={workout.id} className="flex justify-between items-center p-4 border rounded-lg hover:border-primary transition">
+                        <div>
+                          <h4 className="font-medium">{workout.name}</h4>
+                          <p className="text-sm text-gray-500">{workout.targetMuscleGroups.join(', ')}</p>
+                        </div>
+                        <Button onClick={() => startWorkout(workout.id)}>
+                          Start
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center p-8">
+                    <p className="text-gray-500 mb-2">You don't have any saved workouts yet.</p>
+                    <p className="text-gray-500 text-sm">Create your first custom workout to get started!</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            <Dialog open={showCreateWorkoutForm} onOpenChange={setShowCreateWorkoutForm}>
+              <DialogContent className="sm:max-w-5xl">
+                <DialogHeader>
+                  <DialogTitle>Create Custom Workout</DialogTitle>
+                  <DialogDescription>
+                    Design your own workout with your favorite exercises
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <CreateWorkoutForm onSuccess={() => {
+                  setShowCreateWorkoutForm(false);
+                  queryClient.invalidateQueries({ queryKey: ['/api/workouts'] });
+                  queryClient.invalidateQueries({ queryKey: ['/api/workouts/user', user?.id] });
+                }} />
+              </DialogContent>
+            </Dialog>
+          </div>
         </TabsContent>
       </Tabs>
     </MainLayout>

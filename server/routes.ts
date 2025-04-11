@@ -129,6 +129,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  workoutRouter.get("/user/:userId", async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      // Placeholder logic - in a real application, you'd have a way to
+      // fetch workouts specific to a user (created by them or saved to their profile)
+      // For demo, we're fetching all workouts
+      const allWorkouts = await storage.getAllWorkouts();
+      // For demo purposes, assume all workouts belong to the user
+      res.status(200).json(allWorkouts.slice(0, 3));
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get user workouts" });
+    }
+  });
+  
   workoutRouter.get("/:id", async (req: Request, res: Response) => {
     try {
       const workoutId = parseInt(req.params.id);
@@ -232,6 +246,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.use("/api/exercises", exerciseRouter);
+  
+  // Workout Exercise routes
+  const workoutExerciseRouter = express.Router();
+  
+  workoutExerciseRouter.post("/", async (req: Request, res: Response) => {
+    try {
+      const workoutExerciseData = insertWorkoutExerciseSchema.parse(req.body);
+      const workoutExercise = await storage.addExerciseToWorkout(workoutExerciseData);
+      res.status(201).json(workoutExercise);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid workout exercise data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to add exercise to workout" });
+    }
+  });
+  
+  app.use("/api/workout-exercises", workoutExerciseRouter);
   
   // Food routes
   const foodRouter = express.Router();
