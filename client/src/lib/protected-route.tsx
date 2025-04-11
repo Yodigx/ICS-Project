@@ -1,4 +1,4 @@
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
@@ -10,16 +10,34 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isAuthenticated, user } = useAuth();
   const [, setLocation] = useLocation();
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    // If not authenticated, redirect to login
-    if (!isAuthenticated && !user) {
-      setLocation("/login");
-    }
+    // Small delay to let the authentication check complete
+    const checkAuth = async () => {
+      if (!isAuthenticated && !user) {
+        setLocation("/login");
+      }
+      setIsChecking(false);
+    };
+    
+    // Add a small timeout to ensure the auth state is properly loaded
+    const timer = setTimeout(checkAuth, 300);
+    return () => clearTimeout(timer);
   }, [isAuthenticated, user, setLocation]);
 
   // While checking authentication, show loading
-  if (!isAuthenticated && !user) {
+  if (isChecking) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // If after check we're not authenticated, still return loading
+  // (the redirect will happen via the useEffect)
+  if (!isAuthenticated || !user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

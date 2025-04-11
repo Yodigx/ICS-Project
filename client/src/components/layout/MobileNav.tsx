@@ -79,18 +79,6 @@ export default function MobileNav() {
             <i className={`fas fa-user ${iconClass("/profile")}`}></i>
             <span>Profile</span>
           </a>
-          <Button 
-            onClick={() => {
-              logout();
-              setIsMenuOpen(false);
-            }}
-            variant="outline"
-            className="w-full mt-2 text-sm justify-start"
-            size="sm"
-          >
-            <i className="fas fa-sign-out-alt mr-3"></i>
-            <span>Logout</span>
-          </Button>
         </nav>
       </div>
     </>

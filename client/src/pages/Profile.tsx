@@ -9,6 +9,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { LogOut } from 'lucide-react';
 
 export default function Profile() {
   const { user, logout } = useAuth();
@@ -190,7 +191,8 @@ export default function Profile() {
                   </>
                 ) : (
                   <>
-                    <Button variant="destructive" onClick={logout}>
+                    <Button variant="destructive" onClick={logout} className="flex items-center">
+                      <LogOut className="mr-2 h-4 w-4" />
                       Logout
                     </Button>
                     <Button onClick={() => setIsEditing(true)}>

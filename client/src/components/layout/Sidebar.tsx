@@ -69,27 +69,16 @@ export default function Sidebar() {
 
       {user && (
         <div className="p-4 border-t border-gray-700">
-          <div className="flex flex-col">
-            <div className="flex items-center mb-2">
-              <img 
-                className="h-10 w-10 rounded-full object-cover" 
-                src={user.profileImage || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80"} 
-                alt={`${user.firstName} ${user.lastName}`} 
-              />
-              <div className="ml-3 flex-1 truncate">
-                <p className="text-sm font-medium">{user.firstName} {user.lastName}</p>
-                <p className="text-xs text-gray-400">{user.plan} Plan</p>
-              </div>
+          <div className="flex items-center">
+            <img 
+              className="h-10 w-10 rounded-full object-cover" 
+              src={user.profileImage || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80"} 
+              alt={`${user.firstName} ${user.lastName}`} 
+            />
+            <div className="ml-3 flex-1 truncate">
+              <p className="text-sm font-medium">{user.firstName} {user.lastName}</p>
+              <p className="text-xs text-gray-400">{user.plan} Plan</p>
             </div>
-            <Button 
-              onClick={logout}
-              variant="outline"
-              className="w-full mt-2 text-sm"
-              size="sm"
-            >
-              <i className="fas fa-sign-out-alt mr-2"></i>
-              Logout
-            </Button>
           </div>
         </div>
       )}
