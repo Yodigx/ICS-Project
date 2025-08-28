@@ -21,18 +21,18 @@ export default function Workouts() {
   const [selectedMuscleGroups, setSelectedMuscleGroups] = useState<string[]>([]);
   const [showCreateWorkoutForm, setShowCreateWorkoutForm] = useState<boolean>(false);
   
-  const { data: workouts, isLoading: isLoadingWorkouts } = useQuery({
+  const { data: workouts, isLoading: isLoadingWorkouts } = useQuery<Workout[]>({
     queryKey: ['/api/workouts'],
     enabled: !!user,
   });
   
-  const { data: exercises, isLoading: isLoadingExercises } = useQuery({
+  const { data: exercises, isLoading: isLoadingExercises } = useQuery<Exercise[]>({
     queryKey: ['/api/exercises'],
     enabled: !!user,
   });
   
   // Get user's custom workouts
-  const { data: userWorkouts, isLoading: isLoadingUserWorkouts } = useQuery({
+  const { data: userWorkouts, isLoading: isLoadingUserWorkouts } = useQuery<Workout[]>({
     queryKey: ['/api/workouts/user', user?.id],
     enabled: !!user?.id,
   });
@@ -267,7 +267,7 @@ export default function Workouts() {
                   Array(3).fill(0).map((_, i) => (
                     <Skeleton key={i} className="h-20 w-full mb-3" />
                   ))
-                ) : userWorkouts?.length > 0 ? (
+                ) : userWorkouts && userWorkouts.length > 0 ? (
                   <div className="space-y-3">
                     {userWorkouts.map((workout: Workout) => (
                       <div key={workout.id} className="flex justify-between items-center p-4 border rounded-lg hover:border-primary transition">

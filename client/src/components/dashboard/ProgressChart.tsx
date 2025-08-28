@@ -12,13 +12,13 @@ export default function ProgressChart() {
   const [timeRange, setTimeRange] = useState<string>("30");
 
   // Fetch progress data
-  const { data: progressData, isLoading: isLoadingProgress } = useQuery({
+  const { data: progressData, isLoading: isLoadingProgress } = useQuery<ProgressData[]>({
     queryKey: ['/api/progress/user/' + (user?.id || 0)],
     enabled: !!user?.id,
   });
 
   // Fetch workout logs
-  const { data: workoutLogs, isLoading: isLoadingWorkouts } = useQuery({
+  const { data: workoutLogs, isLoading: isLoadingWorkouts } = useQuery<WorkoutLog[]>({
     queryKey: ['/api/workout-logs/user/' + (user?.id || 0)],
     enabled: !!user?.id,
   });

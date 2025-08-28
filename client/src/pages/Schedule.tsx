@@ -19,13 +19,13 @@ export default function Schedule() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   
   // Fetch class schedules
-  const { data: classSchedules, isLoading: isLoadingClasses } = useQuery({
+  const { data: classSchedules, isLoading: isLoadingClasses } = useQuery<ClassSchedule[]>({
     queryKey: ['/api/class-schedules'],
     enabled: !!user,
   });
   
   // Fetch user's enrollments
-  const { data: userEnrollments, isLoading: isLoadingEnrollments } = useQuery({
+  const { data: userEnrollments, isLoading: isLoadingEnrollments } = useQuery<(ClassEnrollment & { class: ClassSchedule })[]>({
     queryKey: ['/api/class-enrollments/user/' + (user?.id || 0)],
     enabled: !!user?.id,
   });
@@ -100,7 +100,7 @@ export default function Schedule() {
     return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
   };
 
-  const formatTimeRange = (startTime: string, endTime: string) => {
+  const formatTimeRange = (startTime: Date | string, endTime: Date | string) => {
     const start = new Date(startTime);
     const end = new Date(endTime);
     return `${window.formatDate(start, 'h:mm a')} - ${window.formatDate(end, 'h:mm a')}`;

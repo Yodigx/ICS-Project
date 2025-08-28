@@ -6,12 +6,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function MealPlanComponent() {
   const { user } = useAuth();
   
-  const { data: mealPlan, isLoading: isLoadingMealPlan } = useQuery({
+  const { data: mealPlan, isLoading: isLoadingMealPlan } = useQuery<MealPlan | undefined>({
     queryKey: ['/api/meal-plans/' + (user?.id || 0) + '/today'],
     enabled: !!user?.id,
   });
 
-  const { data: foods, isLoading: isLoadingFoods } = useQuery({
+  const { data: foods, isLoading: isLoadingFoods } = useQuery<Food[]>({
     queryKey: ['/api/foods'],
     enabled: !!user?.id,
   });
@@ -70,7 +70,7 @@ export default function MealPlanComponent() {
       
       {mealPlan.meals.sort((a: any, b: any) => {
         // Sort by time (assuming time is in HH:MM AM/PM format)
-        return new Date('1970/01/01 ' + a.time) - new Date('1970/01/01 ' + b.time);
+        return new Date('1970/01/01 ' + a.time).getTime() - new Date('1970/01/01 ' + b.time).getTime();
       }).map((meal: any, index: number) => {
         const food = getFoodById(meal.foodId);
         const { icon, bgClass, textClass } = getMealTypeStyles(meal.type);

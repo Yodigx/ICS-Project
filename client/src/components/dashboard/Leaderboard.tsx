@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { LeaderboardEntry } from "@/types";
 
 export default function Leaderboard() {
-  const { data: leaderboardData, isLoading } = useQuery({
+  const { data: leaderboardData, isLoading } = useQuery<LeaderboardEntry[]>({
     queryKey: ['/api/leaderboard'],
   });
 
@@ -83,9 +83,6 @@ export default function Leaderboard() {
                 <div className="ml-3 flex-1">
                   <p className="text-sm font-medium">
                     {entry.user.firstName} {entry.user.lastName}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {entry.user.workoutLogs?.length || 0} workouts completed
                   </p>
                 </div>
                 <div className={`text-sm font-display font-semibold ${text}`}>

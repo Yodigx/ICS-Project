@@ -18,7 +18,7 @@ export default function DietPlanner() {
   const [restrictions, setRestrictions] = useState<string[]>([]);
   const [calorieTarget, setCalorieTarget] = useState<number>(2000);
   
-  const { data: foods, isLoading } = useQuery({
+  const { data: foods, isLoading } = useQuery<Food[]>({
     queryKey: ['/api/foods'],
     enabled: !!user,
   });

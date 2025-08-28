@@ -9,7 +9,7 @@ import { apiRequest } from "@/lib/queryClient";
 export default function TrainerMessages() {
   const { user } = useAuth();
   
-  const { data: messages, isLoading, refetch } = useQuery({
+  const { data: messages, isLoading, refetch } = useQuery<Message[]>({
     queryKey: ['/api/messages/user/' + (user?.id || 0)],
     enabled: !!user?.id,
   });

@@ -394,7 +394,9 @@ export class MemStorage implements IStorage {
 
     // Add sample meal plan
     const today = new Date();
-    const formattedDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const formattedDate = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+      .toISOString()
+      .split('T')[0];
     
     const mealPlan: MealPlan = {
       id: 1,
@@ -414,7 +416,10 @@ export class MemStorage implements IStorage {
     for (let i = 7; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
-      pastDates.push(new Date(date.getFullYear(), date.getMonth(), date.getDate()));
+      const dateStr = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+        .toISOString()
+        .split('T')[0];
+      pastDates.push(dateStr);
     }
 
     const workoutLogs: WorkoutLog[] = [
@@ -474,9 +479,9 @@ export class MemStorage implements IStorage {
       const progressEntry: ProgressData = {
         id: index + 1,
         userId: 1,
-        date: entry.date,
+        date: new Date(entry.date).toISOString().split('T')[0],
         weight: entry.weight,
-        bodyFat: undefined,
+        bodyFat: null,
         notes: ""
       };
       this.progressData.set(progressEntry.id, progressEntry);
@@ -574,7 +579,18 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentIds.users++;
-    const user: User = { ...insertUser, id };
+    const user: User = { 
+      ...insertUser, 
+      id,
+      weight: insertUser.weight ?? null,
+      height: insertUser.height ?? null,
+      profileImage: insertUser.profileImage ?? null,
+      age: insertUser.age ?? null,
+      gender: insertUser.gender ?? null,
+      goal: insertUser.goal ?? null,
+      plan: insertUser.plan ?? null,
+      isTrainer: insertUser.isTrainer ?? null
+    };
     this.users.set(id, user);
     return user;
   }
@@ -599,7 +615,13 @@ export class MemStorage implements IStorage {
 
   async createWorkout(insertWorkout: InsertWorkout): Promise<Workout> {
     const id = this.currentIds.workouts++;
-    const workout: Workout = { ...insertWorkout, id };
+    const workout: Workout = { 
+      ...insertWorkout, 
+      id,
+      equipmentRequired: insertWorkout.equipmentRequired ?? null,
+      targetMuscleGroups: insertWorkout.targetMuscleGroups ?? null,
+      imageUrl: insertWorkout.imageUrl ?? null
+    };
     this.workouts.set(id, workout);
     return workout;
   }
@@ -607,10 +629,10 @@ export class MemStorage implements IStorage {
   async recommendWorkouts(equipment: string[], muscleGroups: string[]): Promise<Workout[]> {
     return Array.from(this.workouts.values()).filter(workout => {
       const hasRequiredEquipment = equipment.length === 0 || 
-        workout.equipmentRequired.some(eq => equipment.includes(eq));
+        (workout.equipmentRequired ?? []).some(eq => equipment.includes(eq));
       
       const targetsDesiredMuscles = muscleGroups.length === 0 || 
-        workout.targetMuscleGroups.some(mg => muscleGroups.includes(mg));
+        (workout.targetMuscleGroups ?? []).some(mg => muscleGroups.includes(mg));
       
       return hasRequiredEquipment && targetsDesiredMuscles;
     });
@@ -627,7 +649,13 @@ export class MemStorage implements IStorage {
 
   async createExercise(insertExercise: InsertExercise): Promise<Exercise> {
     const id = this.currentIds.exercises++;
-    const exercise: Exercise = { ...insertExercise, id };
+    const exercise: Exercise = { 
+      ...insertExercise, 
+      id,
+      equipmentRequired: insertExercise.equipmentRequired ?? null,
+      imageUrl: insertExercise.imageUrl ?? null,
+      videoUrl: insertExercise.videoUrl ?? null
+    };
     this.exercises.set(id, exercise);
     return exercise;
   }
@@ -653,7 +681,11 @@ export class MemStorage implements IStorage {
 
   async addExerciseToWorkout(insertWorkoutExercise: InsertWorkoutExercise): Promise<WorkoutExercise> {
     const id = this.currentIds.workoutExercises++;
-    const workoutExercise: WorkoutExercise = { ...insertWorkoutExercise, id };
+    const workoutExercise: WorkoutExercise = { 
+      ...insertWorkoutExercise, 
+      id,
+      restTime: insertWorkoutExercise.restTime ?? null
+    };
     this.workoutExercises.set(id, workoutExercise);
     return workoutExercise;
   }
@@ -669,7 +701,12 @@ export class MemStorage implements IStorage {
 
   async createFood(insertFood: InsertFood): Promise<Food> {
     const id = this.currentIds.foods++;
-    const food: Food = { ...insertFood, id };
+    const food: Food = { 
+      ...insertFood, 
+      id,
+      imageUrl: insertFood.imageUrl ?? null,
+      fiber: insertFood.fiber ?? null
+    };
     this.foods.set(id, food);
     return food;
   }
@@ -682,8 +719,9 @@ export class MemStorage implements IStorage {
 
   // Meal Plan methods
   async getMealPlan(userId: number, date: Date): Promise<MealPlan | undefined> {
+    const dateStr = date.toISOString().split('T')[0];
     return Array.from(this.mealPlans.values()).find(
-      mp => mp.userId === userId && mp.date.getTime() === date.getTime()
+      mp => mp.userId === userId && mp.date === dateStr
     );
   }
 
@@ -718,16 +756,24 @@ export class MemStorage implements IStorage {
 
   async createWorkoutLog(insertWorkoutLog: InsertWorkoutLog): Promise<WorkoutLog> {
     const id = this.currentIds.workoutLogs++;
-    const workoutLog: WorkoutLog = { ...insertWorkoutLog, id };
+    const workoutLog: WorkoutLog = { 
+      ...insertWorkoutLog, 
+      id,
+      caloriesBurned: insertWorkoutLog.caloriesBurned ?? null,
+      completed: insertWorkoutLog.completed ?? null,
+      date: new Date(insertWorkoutLog.date).toISOString().split('T')[0]
+    };
     this.workoutLogs.set(id, workoutLog);
     return workoutLog;
   }
 
   async getWorkoutLogsInDateRange(userId: number, startDate: Date, endDate: Date): Promise<WorkoutLog[]> {
+    const start = startDate.toISOString().split('T')[0];
+    const end = endDate.toISOString().split('T')[0];
     return Array.from(this.workoutLogs.values()).filter(
       wl => wl.userId === userId && 
-        wl.date >= startDate && 
-        wl.date <= endDate
+        wl.date >= start && 
+        wl.date <= end
     );
   }
 
@@ -740,16 +786,25 @@ export class MemStorage implements IStorage {
 
   async createProgressData(insertProgressData: InsertProgressData): Promise<ProgressData> {
     const id = this.currentIds.progressData++;
-    const progressData: ProgressData = { ...insertProgressData, id };
+    const progressData: ProgressData = { 
+      ...insertProgressData, 
+      id,
+      date: new Date(insertProgressData.date).toISOString().split('T')[0],
+      weight: insertProgressData.weight ?? null,
+      bodyFat: insertProgressData.bodyFat ?? null,
+      notes: insertProgressData.notes ?? null
+    };
     this.progressData.set(id, progressData);
     return progressData;
   }
 
   async getProgressInDateRange(userId: number, startDate: Date, endDate: Date): Promise<ProgressData[]> {
+    const start = startDate.toISOString().split('T')[0];
+    const end = endDate.toISOString().split('T')[0];
     return Array.from(this.progressData.values()).filter(
       pd => pd.userId === userId && 
-        pd.date >= startDate && 
-        pd.date <= endDate
+        pd.date >= start && 
+        pd.date <= end
     );
   }
 
@@ -804,7 +859,12 @@ export class MemStorage implements IStorage {
 
   async createClassSchedule(insertClassSchedule: InsertClassSchedule): Promise<ClassSchedule> {
     const id = this.currentIds.classSchedules++;
-    const classSchedule: ClassSchedule = { ...insertClassSchedule, id };
+    const classSchedule: ClassSchedule = { 
+      ...insertClassSchedule, 
+      id,
+      description: insertClassSchedule.description ?? null,
+      currentParticipants: insertClassSchedule.currentParticipants ?? 0
+    };
     this.classSchedules.set(id, classSchedule);
     return classSchedule;
   }
@@ -828,7 +888,7 @@ export class MemStorage implements IStorage {
     // Update current participants count
     const classSchedule = this.classSchedules.get(enrollment.classId);
     if (classSchedule) {
-      classSchedule.currentParticipants += 1;
+      classSchedule.currentParticipants = (classSchedule.currentParticipants ?? 0) + 1;
       this.classSchedules.set(classSchedule.id, classSchedule);
     }
     
@@ -852,12 +912,13 @@ export class MemStorage implements IStorage {
     // Calculate points based on workout completions in the last 30 days
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
     
     const userWorkouts = new Map<number, WorkoutLog[]>();
     
     // Group workout logs by user
     Array.from(this.workoutLogs.values()).forEach(log => {
-      if (log.date >= thirtyDaysAgo && log.completed) {
+      if (log.date >= thirtyDaysAgoStr && log.completed) {
         if (!userWorkouts.has(log.userId)) {
           userWorkouts.set(log.userId, []);
         }

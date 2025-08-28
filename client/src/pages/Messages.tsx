@@ -23,13 +23,13 @@ export default function Messages() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   
   // Fetch user's messages
-  const { data: messages, isLoading: isLoadingMessages } = useQuery({
+  const { data: messages, isLoading: isLoadingMessages } = useQuery<Message[]>({
     queryKey: ['/api/messages/user/' + (user?.id || 0)],
     enabled: !!user?.id,
   });
 
   // Fetch all trainers for the contacts list
-  const { data: trainers, isLoading: isLoadingTrainers } = useQuery({
+  const { data: trainers, isLoading: isLoadingTrainers } = useQuery<User[]>({
     queryKey: ['/api/users'],
     // In a real app, you would filter by isTrainer=true
     enabled: !!user?.id,

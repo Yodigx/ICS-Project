@@ -21,12 +21,12 @@ export default function Progress() {
   const [bodyFat, setBodyFat] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   
-  const { data: progressData, isLoading: isLoadingProgress } = useQuery({
+  const { data: progressData, isLoading: isLoadingProgress } = useQuery<ProgressData[]>({
     queryKey: ['/api/progress/user/' + (user?.id || 0)],
     enabled: !!user?.id,
   });
 
-  const { data: workoutLogs, isLoading: isLoadingWorkouts } = useQuery({
+  const { data: workoutLogs, isLoading: isLoadingWorkouts } = useQuery<WorkoutLog[]>({
     queryKey: ['/api/workout-logs/user/' + (user?.id || 0)],
     enabled: !!user?.id,
   });

@@ -561,7 +561,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Class not found" });
       }
       
-      if (classSchedule.currentParticipants >= classSchedule.maxParticipants) {
+      if ((classSchedule.currentParticipants ?? 0) >= classSchedule.maxParticipants) {
         return res.status(400).json({ message: "Class is full" });
       }
       

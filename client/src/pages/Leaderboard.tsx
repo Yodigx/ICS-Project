@@ -12,7 +12,7 @@ import { LeaderboardEntry } from "@/types";
 export default function Leaderboard() {
   const [timeRange, setTimeRange] = useState<string>("week");
   
-  const { data: leaderboardData, isLoading } = useQuery({
+  const { data: leaderboardData, isLoading } = useQuery<LeaderboardEntry[]>({
     queryKey: ['/api/leaderboard', timeRange],
   });
 
@@ -88,7 +88,6 @@ export default function Leaderboard() {
                           {entry.user.firstName} {entry.user.lastName}
                         </p>
                         <div className="flex items-center text-xs text-gray-500 mt-0.5">
-                          <span className="mr-2">{entry.user.workoutLogs?.length || 0} workouts completed</span>
                           {entry.user.goal && (
                             <Badge variant="outline" className="capitalize text-xs">
                               {entry.user.goal.replace('_', ' ')}

@@ -72,8 +72,8 @@ export function TodaysWorkout({ name, description, exercises }: WorkoutProps) {
                     )}
                     {!exercise.weight && !exercise.duration && (
                       <>
-                        <span>Last: {exercise.refs ? exercise.reps - 2 : 0} reps</span>
-                        <span>Target: {exercise.reps} reps</span>
+                        <span>Last: {typeof exercise.reps === 'number' ? Math.max(exercise.reps - 2, 0) : 0} reps</span>
+                        <span>Target: {typeof exercise.reps === 'number' ? exercise.reps : 0} reps</span>
                       </>
                     )}
                   </div>

@@ -10,13 +10,13 @@ export default function WorkoutPlan() {
   const [isTimerModalOpen, setIsTimerModalOpen] = useState(false);
   
   // Get the workout for today
-  const { data: workout, isLoading: isLoadingWorkout } = useQuery({
+  const { data: workout, isLoading: isLoadingWorkout } = useQuery<Workout | undefined>({
     queryKey: ['/api/workouts/1'], // For demo, we're using a fixed workout ID
     enabled: !!user?.id,
   });
 
   // Get the exercises for the workout
-  const { data: exercises, isLoading: isLoadingExercises } = useQuery({
+  const { data: exercises, isLoading: isLoadingExercises } = useQuery<WorkoutExercise[]>({
     queryKey: ['/api/workouts/1/exercises'], // For demo, we're using a fixed workout ID
     enabled: !!workout,
   });

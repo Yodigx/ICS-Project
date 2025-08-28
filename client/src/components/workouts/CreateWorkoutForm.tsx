@@ -54,7 +54,7 @@ export default function CreateWorkoutForm({ onSuccess }: { onSuccess: () => void
     },
   });
 
-  const { data: exercises } = useQuery({
+  const { data: exercises } = useQuery<Exercise[]>({
     queryKey: ['/api/exercises'],
     enabled: !!user,
   });
@@ -225,13 +225,14 @@ export default function CreateWorkoutForm({ onSuccess }: { onSuccess: () => void
                             >
                               <FormControl>
                                 <Checkbox
-                                  checked={field.value?.includes(option)}
+                                  checked={(field.value ?? []).includes(option)}
                                   onCheckedChange={(checked) => {
+                                    const current = field.value ?? [];
                                     return checked
-                                      ? field.onChange([...field.value, option])
+                                      ? field.onChange([...current, option])
                                       : field.onChange(
-                                          field.value?.filter(
-                                            (value) => value !== option
+                                          current.filter(
+                                            (value: string) => value !== option
                                           )
                                         )
                                   }}
@@ -273,13 +274,14 @@ export default function CreateWorkoutForm({ onSuccess }: { onSuccess: () => void
                             >
                               <FormControl>
                                 <Checkbox
-                                  checked={field.value?.includes(option)}
+                                  checked={(field.value ?? []).includes(option)}
                                   onCheckedChange={(checked) => {
+                                    const current = field.value ?? [];
                                     return checked
-                                      ? field.onChange([...field.value, option])
+                                      ? field.onChange([...current, option])
                                       : field.onChange(
-                                          field.value?.filter(
-                                            (value) => value !== option
+                                          current.filter(
+                                            (value: string) => value !== option
                                           )
                                         )
                                   }}
