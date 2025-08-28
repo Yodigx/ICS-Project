@@ -65,7 +65,7 @@ export default function WorkoutPlan() {
       <div className="bg-gray-50 rounded-lg p-4 mb-4">
         <div className="flex justify-between items-center mb-2">
           <h5 className="font-medium">{workout.name}</h5>
-          <span className="bg-primary bg-opacity-10 text-primary text-xs px-2 py-1 rounded font-medium">
+          <span className="bg-primary text-white text-xs px-2 py-1 rounded font-medium">
             {workout.duration} mins
           </span>
         </div>
