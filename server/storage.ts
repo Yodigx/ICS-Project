@@ -296,18 +296,71 @@ export class MemStorage implements IStorage {
     this.currentIds.exercises = 5;
 
     // Add sample workouts
-    const workout: Workout = {
-      id: 1,
-      name: "Upper Body Strength",
-      description: "Focus on chest, shoulders, and triceps with equipment you have available.",
-      duration: 45,
-      difficulty: "intermediate",
-      equipmentRequired: ["dumbbells", "bench"],
-      targetMuscleGroups: ["chest", "shoulders", "triceps"],
-      imageUrl: ""
-    };
-    this.workouts.set(1, workout);
-    this.currentIds.workouts = 2;
+    const sampleWorkouts: Workout[] = [
+      {
+        id: 1,
+        name: "Upper Body Strength",
+        description: "Focus on chest, shoulders, and triceps with equipment you have available.",
+        duration: 45,
+        difficulty: "intermediate",
+        equipmentRequired: ["dumbbells", "bench"],
+        targetMuscleGroups: ["chest", "shoulders", "triceps"],
+        imageUrl: ""
+      },
+      {
+        id: 2,
+        name: "Lower Body Blast",
+        description: "Build strength in quads, hamstrings, and glutes with compound lifts and accessories.",
+        duration: 40,
+        difficulty: "intermediate",
+        equipmentRequired: ["barbell", "bench"],
+        targetMuscleGroups: ["legs", "glutes"],
+        imageUrl: ""
+      },
+      {
+        id: 3,
+        name: "Core Crusher",
+        description: "Intense core circuit targeting abs and lower back stability.",
+        duration: 30,
+        difficulty: "beginner",
+        equipmentRequired: ["none"],
+        targetMuscleGroups: ["core"],
+        imageUrl: ""
+      },
+      {
+        id: 4,
+        name: "Back & Biceps Pull Day",
+        description: "Pull-focused workout to grow your back and arms.",
+        duration: 50,
+        difficulty: "intermediate",
+        equipmentRequired: ["dumbbells", "pull-up bar"],
+        targetMuscleGroups: ["back", "arms"],
+        imageUrl: ""
+      },
+      {
+        id: 5,
+        name: "Shoulder Sculpt",
+        description: "Deltoid-focused session with presses and raises.",
+        duration: 35,
+        difficulty: "beginner",
+        equipmentRequired: ["dumbbells"],
+        targetMuscleGroups: ["shoulders"],
+        imageUrl: ""
+      },
+      {
+        id: 6,
+        name: "Full Body HIIT",
+        description: "High intensity intervals for a full-body cardio burn.",
+        duration: 25,
+        difficulty: "advanced",
+        equipmentRequired: ["none"],
+        targetMuscleGroups: ["cardio", "full body"],
+        imageUrl: ""
+      }
+    ];
+
+    sampleWorkouts.forEach(w => this.workouts.set(w.id, w));
+    this.currentIds.workouts = 7;
 
     // Add workout exercises
     const workoutExercises: WorkoutExercise[] = [
