@@ -1,5 +1,3 @@
-# ICS-project
-=======
 # FitLife - Interactive Health & Fitness Platform
 
 A comprehensive web application designed to address health and fitness concerns in India, providing tools for workout planning, nutrition management, progress tracking, and trainer communication.
