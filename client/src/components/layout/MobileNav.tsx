@@ -29,7 +29,7 @@ export default function MobileNav() {
 
   return (
     <>
-      <div className="lg:hidden bg-dark text-white w-full py-4 px-6 flex items-center justify-between z-40">
+      <div className="lg:hidden bg-gray-900 text-white w-full py-4 px-6 flex items-center justify-between z-40">
         <h1 className="text-xl font-bold text-primary">FitLife</h1>
         <button onClick={toggleMenu} className="text-white">
           <i className="fas fa-bars text-xl"></i>
@@ -40,7 +40,7 @@ export default function MobileNav() {
         <div className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40" onClick={toggleMenu} />
       )}
 
-      <div className={`lg:hidden fixed top-14 inset-x-0 bg-dark text-white z-50 transform ${isMenuOpen ? 'translate-y-0' : '-translate-y-full'} transition-transform duration-200 ease-in-out`}>
+      <div className={`lg:hidden fixed top-14 inset-x-0 bg-gray-900 text-white z-50 transform ${isMenuOpen ? 'translate-y-0' : '-translate-y-full'} transition-transform duration-200 ease-in-out`}>
         <nav className="px-4 py-2 space-y-1">
           <Link href="/">
             <a className={linkClass("/")} onClick={() => setIsMenuOpen(false)}>

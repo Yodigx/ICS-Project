@@ -22,7 +22,7 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="bg-dark text-white lg:w-64 w-full lg:flex lg:flex-col hidden lg:fixed lg:inset-y-0">
+    <aside className="bg-gray-900 text-white lg:w-64 w-full lg:flex lg:flex-col hidden lg:fixed lg:inset-y-0">
       <div className="flex items-center justify-center h-16 px-4 border-b border-gray-700">
         <h1 className="text-2xl font-bold text-primary">FitLife</h1>
       </div>
