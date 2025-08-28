@@ -417,6 +417,39 @@ export class MemStorage implements IStorage {
         imageUrl: ""
       },
       {
+        id: 4,
+        name: "Greek Yogurt with Nuts",
+        calories: 180,
+        protein: 14,
+        carbs: 12,
+        fat: 7,
+        fiber: 1,
+        category: "snack",
+        imageUrl: ""
+      },
+      {
+        id: 5,
+        name: "Fruit Salad",
+        calories: 150,
+        protein: 3,
+        carbs: 35,
+        fat: 1,
+        fiber: 4,
+        category: "snack",
+        imageUrl: ""
+      },
+      {
+        id: 6,
+        name: "Roasted Chana",
+        calories: 200,
+        protein: 10,
+        carbs: 30,
+        fat: 4,
+        fiber: 6,
+        category: "snack",
+        imageUrl: ""
+      },
+      {
         id: 2,
         name: "Brown Rice with Dal and Mixed Vegetables",
         calories: 400,
@@ -443,7 +476,7 @@ export class MemStorage implements IStorage {
     foods.forEach(food => {
       this.foods.set(food.id, food);
     });
-    this.currentIds.foods = 4;
+    this.currentIds.foods = 7;
 
     // Add sample meal plan
     const today = new Date();

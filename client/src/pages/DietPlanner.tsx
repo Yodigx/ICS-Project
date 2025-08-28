@@ -17,6 +17,7 @@ export default function DietPlanner() {
   const [goal, setGoal] = useState<string>("weight_loss");
   const [restrictions, setRestrictions] = useState<string[]>([]);
   const [calorieTarget, setCalorieTarget] = useState<number>(2000);
+  const [recommended, setRecommended] = useState<Record<string, Food[]>>({});
   
   const { data: foods, isLoading } = useQuery<Food[]>({
     queryKey: ['/api/foods'],
@@ -32,8 +33,27 @@ export default function DietPlanner() {
   };
 
   const getFoodsByCategory = (category: string): Food[] => {
+    if (recommended[category] && recommended[category].length > 0) return recommended[category];
     if (!foods) return [];
     return foods.filter((food: Food) => food.category === category);
+  };
+
+  const handleGenerate = () => {
+    if (!foods || foods.length === 0) return;
+    const categories = ["breakfast", "lunch", "dinner", "snack"];
+    const perMeal = Math.max(300, Math.round(calorieTarget / 3));
+    const within = (cal: number) => {
+      if (goal === "weight_loss") return cal <= Math.round(perMeal * 0.85);
+      if (goal === "muscle_gain") return cal >= Math.round(perMeal * 0.75);
+      return Math.abs(cal - perMeal) <= 200;
+    };
+    const next: Record<string, Food[]> = {};
+    categories.forEach((cat) => {
+      const pool = foods.filter((f) => f.category === cat);
+      const filtered = pool.filter((f) => within(f.calories));
+      next[cat] = (filtered.length > 0 ? filtered : pool).slice(0, 3);
+    });
+    setRecommended(next);
   };
 
   return (
@@ -92,7 +112,7 @@ export default function DietPlanner() {
                 />
               </div>
 
-              <Button className="w-full">Generate Meal Plan</Button>
+              <Button className="w-full" onClick={handleGenerate}>Generate Meal Plan</Button>
             </CardContent>
           </Card>
         </div>
@@ -109,10 +129,10 @@ export default function DietPlanner() {
                   <TabsTrigger value="breakfast">Breakfast</TabsTrigger>
                   <TabsTrigger value="lunch">Lunch</TabsTrigger>
                   <TabsTrigger value="dinner">Dinner</TabsTrigger>
-                  <TabsTrigger value="snacks">Snacks</TabsTrigger>
+                  <TabsTrigger value="snack">Snacks</TabsTrigger>
                 </TabsList>
                 
-                {["breakfast", "lunch", "dinner", "snacks"].map(mealType => (
+                {["breakfast", "lunch", "dinner", "snack"].map(mealType => (
                   <TabsContent key={mealType} value={mealType} className="space-y-4">
                     {isLoading ? (
                       <div className="space-y-4">
